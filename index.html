@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Peak</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Peak">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#14161a">
+<style>
+:root{--bg:#14161a;--card:#1d2026;--line:#2e333b;--txt:#f2efe9;--mut:#8b919c;--phy:#ff7a3d;--men:#3db8ff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,sans-serif}
+body{min-height:100vh;padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 24px)}
+main{max-width:480px;margin:0 auto}
+.card{border:2px solid var(--line);border-radius:28px;background:var(--card);padding:20px 16px 24px;margin-top:12px}
+h1{margin:4px 0 0;text-align:center;font-size:34px;font-weight:600;letter-spacing:.5px}
+.sub{text-align:center;color:var(--mut);font-size:13px;margin-top:2px}
+.hero{display:grid;grid-template-columns:1fr 150px 1fr;align-items:center;gap:6px;margin:18px 0 22px}
+.side{text-align:center;font-size:13px;color:var(--mut)}
+.side b{display:block;font-size:34px;font-weight:700;margin-top:4px}
+.side.p b{color:var(--phy)}.side.m b{color:var(--men)}
+.cols{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);padding-top:8px}
+.cols>div:first-child{border-right:1px solid var(--line);padding-right:10px}
+.cols>div:last-child{padding-left:10px}
+.stat{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:0;border-bottom:1px solid var(--line);color:inherit;font:inherit;font-size:15px;padding:14px 2px;text-align:left}
+.stat:last-child{border-bottom:0}
+.stat span:last-child{font-weight:700}
+.p .stat span:last-child,.cols>div:first-child .stat span:last-child{color:var(--phy)}
+.cols>div:last-child .stat span:last-child{color:var(--men)}
+.edit{display:block;margin:18px auto 0;background:none;border:0;color:var(--mut);font:inherit;font-size:13px;text-decoration:underline;padding:8px}
+/* feuille détail */
+.sheet-bg{position:fixed;inset:0;background:#000a;display:none;align-items:flex-end;z-index:5}
+.sheet-bg.on{display:flex}
+.sheet{max-height:88vh;overflow:auto;width:100%;max-width:480px;margin:0 auto;background:var(--card);border-radius:28px 28px 0 0;padding:22px 20px calc(env(safe-area-inset-bottom) + 26px);animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.sheet h2{margin:0 0 4px;font-size:24px}
+.row{padding:12px 0;border-top:1px solid var(--line)}
+.row .top{display:flex;justify-content:space-between;font-size:15px}
+.row small{color:var(--mut)}
+.bar{display:flex;height:6px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%}
+.close{margin-top:14px;width:100%}
+.go-m{cursor:pointer}.go-m small:last-child{display:block;margin-top:8px}
+.up{color:#4cd27a}.dn{color:#ff5d5d}
+.back{background:none;border:0;color:var(--mut);font:inherit;font-size:15px;padding:0 0 10px}
+.addrow{display:flex;gap:8px;margin-top:6px}.addrow input:first-child{flex:1.4}
+.x{background:none;border:0;color:var(--mut);font-size:15px;padding:4px 6px}
+.ov{position:fixed;inset:0;background:var(--bg);z-index:10;display:none;flex-direction:column;align-items:center;justify-content:flex-start;overflow:auto;padding:24px;text-align:center}
+.ov.on{display:flex}.ov>:first-child{margin-top:auto}.ov>:last-child{margin-bottom:auto}
+.grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;width:min(92vw,420px)}
+.cd{aspect-ratio:5/7;border-radius:6px;border:1px solid #3a4658;padding:0;font:inherit;font-size:12px;font-weight:700;line-height:1.1;background:repeating-linear-gradient(45deg,#24334d,#24334d 4px,#2d4163 4px,#2d4163 8px)}
+.cd.up{background:#f2efe9;color:#14161a}.cd.red{color:#d63a3a}.cd.gone{visibility:hidden}
+.mgh{margin-bottom:10px;font-size:15px;color:var(--mut)}.big{font-size:72px;font-weight:700;height:90px;letter-spacing:4px}
+.ov input{text-align:center;font-size:28px;max-width:280px;margin:0 auto}
+/* formulaire */
+form h2{font-size:18px;margin:26px 0 4px}
+form h3{font-size:14px;color:var(--mut);font-weight:500;margin:18px 0 2px}
+label{display:block;font-size:14px;margin-top:12px}
+label small{color:var(--mut)}
+input{width:100%;margin-top:5px;padding:13px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--txt);font:inherit;font-size:16px}
+input:focus{outline:2px solid var(--men);outline-offset:1px}
+button.go{margin-top:28px;width:100%;padding:16px;border:0;border-radius:14px;background:var(--phy);color:#14161a;font:inherit;font-weight:700;font-size:17px}
+.btn2{padding:14px;border:1px solid var(--line);border-radius:14px;background:none;color:var(--txt);font:inherit;font-size:16px}
+.intro{color:var(--mut);font-size:14px;line-height:1.5;margin:10px 0 0;text-align:center}
+.hint{color:var(--mut);font-size:12px;margin:6px 0 0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <div class="card" id="home" hidden>
+    <h1 id="name"></h1>
+    <div class="sub" id="meta"></div>
+    <div class="hero">
+      <div class="side p">Rang moyen<br><u>Physique</u><b id="rp"></b></div>
+      <svg viewBox="-104 -104 208 208" role="img" aria-label="Yin et yang : physique et mental">
+        <path d="M0-100A100 100 0 0 0 0 100A50 50 0 0 0 0 0A50 50 0 0 1 0-100Z" fill="#ff7a3d"/>
+        <path d="M0-100A100 100 0 0 1 0 100A50 50 0 0 1 0 0A50 50 0 0 0 0-100Z" fill="#3db8ff"/>
+        <circle r="100" fill="none" stroke="#14161a" stroke-width="4"/>
+        <text x="-52" y="-4" text-anchor="middle" font-size="17" font-weight="700" fill="#14161a">Physique</text>
+        <text x="52" y="-4" text-anchor="middle" font-size="17" font-weight="700" fill="#14161a">Mental</text>
+        <circle r="25" fill="#14161a"/>
+        <text id="rg" y="11" text-anchor="middle" font-size="32" font-weight="700" fill="#f2efe9"></text>
+      </svg>
+      <div class="side m">Rang moyen<br><u>Mental</u><b id="rm"></b></div>
+    </div>
+    <div class="cols"><div id="colP"></div><div id="colM"></div></div>
+    <button class="edit" id="editBtn">Modifier mes informations</button>
+  </div>
+
+  <div class="card" id="setup" hidden>
+    <h1>Peak</h1>
+    <p class="intro">Remplis ton profil une fois. Laisse vide ce que tu ne connais pas : seules les mesures remplies comptent dans ta note.</p>
+    <form id="form" novalidate></form>
+  </div>
+</main>
+
+<div class="sheet-bg" id="sheetBg"><div class="sheet" id="sheet"></div></div>
+<div class="ov" id="ov"></div>
+
+<script>
+/* ===== Barèmes : [valeur, note/100]. Modifie-les librement. ===== */
+const T={
+ squat:[[.5,10],[1,40],[1.5,65],[2,85],[2.5,100]],
+ bench:[[.3,10],[.7,40],[1,65],[1.5,90],[1.75,100]],
+ pull:[[0,5],[5,35],[10,60],[20,85],[30,100]],
+ push:[[5,10],[20,35],[40,60],[60,80],[100,100]],
+ m100:[[10.5,100],[11.5,90],[12.5,70],[13.5,50],[15,30],[18,10]],
+ m400:[[48,100],[52,90],[60,70],[70,50],[85,30],[100,10]],
+ k5:[[15,100],[19,90],[23,70],[27,50],[32,30],[40,10]],
+ k10:[[31,100],[40,90],[48,70],[57,50],[68,30],[85,10]],
+ vert:[[15,10],[30,30],[45,55],[60,80],[75,100]],
+ horiz:[[100,10],[170,35],[220,60],[260,85],[300,100]],
+ calc:[[3,10],[10,40],[20,70],[35,100]],
+ elo:[[400,10],[800,30],[1200,50],[1600,70],[2000,90],[2400,100]],
+ screen:[[.5,100],[1.5,90],[3,70],[5,45],[7,25],[10,5]],
+ sleep:[[4,5],[6,40],[7,75],[8,100],[9,90],[10,60],[11,40]],
+ study:[[0,5],[3,25],[7,50],[14,75],[25,95],[35,100]],
+ avg:[[5,10],[10,40],[14,70],[17,90],[20,100]],
+ pct:[[0,0],[100,100]],
+ memo:[[27,100],[33,90],[40,75],[48,55],[60,35],[80,10]],
+ geo:[[0,0],[25,30],[50,60],[75,85],[100,100]]
+};
+/* type: n = nombre, t = temps mm:ss ; ratio = divisé par le poids */
+const GROUPS={
+ physique:{label:"Physique",stats:[
+  {k:"force",label:"Force",m:[
+   {id:"squat",label:"Squat (1 répétition max)",unit:"kg",t:"squat",ratio:1},
+   {id:"tractions",label:"Tractions (max d'affilée)",unit:"reps",t:"pull"},
+   {id:"pompes",label:"Pompes (max d'affilée)",unit:"reps",t:"push"},
+   {id:"bench",label:"Développé couché (1 RM)",unit:"kg",t:"bench",ratio:1}]},
+  {k:"vitesse",label:"Vitesse",m:[
+   {id:"t100",label:"100 m",unit:"secondes",t:"m100",ph:"13.2"},
+   {id:"t400",label:"400 m",unit:"secondes",t:"m400",ph:"62"}]},
+  {k:"endurance",label:"Endurance",m:[
+   {id:"t5k",label:"5 km",unit:"mm:ss",t:"k5",time:1,ph:"25:30"},
+   {id:"t10k",label:"10 km",unit:"mm:ss",t:"k10",time:1,ph:"55:00"}]},
+  {k:"agilite",label:"Agilité",m:[
+   {id:"vert",label:"Détente sèche verticale",unit:"cm",t:"vert"},
+   {id:"horiz",label:"Détente sèche horizontale",unit:"cm",t:"horiz"}]}]},
+ mental:{label:"Mental",stats:[
+  {k:"vivacite",label:"Vivacité",m:[
+   {id:"memory",label:"Memory (52 cartes)",unit:"tours",t:"memo",test:"mem"},
+   {id:"calcul",label:"Calcul mental (60 secondes)",unit:"bonnes réponses",t:"calc",test:"calc"},
+   {id:"elo",label:"Elo aux échecs",unit:"elo",t:"elo"}]},
+  {k:"controle",label:"Contrôle",m:[
+   {id:"ecran",label:"Temps d'écran moyen",unit:"h / jour",t:"screen"},
+   {id:"sommeil",label:"Sommeil moyen",unit:"h / nuit",t:"sleep"}]},
+  {k:"apprentissage",label:"Apprentissage",m:[
+   {id:"etude",label:"Temps d'apprentissage",unit:"h / semaine",t:"study"},
+   {id:"moyenne",label:"Moyenne à l'école",unit:"/ 20",t:"avg"}]},
+  {k:"connaissance",label:"Connaissance",m:[
+   {id:"geo_pays",label:"Pays cités",unit:"/ 197",t:"geo",max:197,link:1},
+   {id:"geo_cap",label:"Capitales citées",unit:"/ 197",t:"geo",max:197,link:1},
+   {id:"geo_flag",label:"Drapeaux cités",unit:"/ 197",t:"geo",max:197,link:1}]}]}
+};
+const RANKS=[["S",90],["A",75],["B",60],["C",40],["D",20],["E",0]];
+const rank=s=>s==null?"–":RANKS.find(r=>s>=r[1])[0];
+const $=id=>document.getElementById(id);
+const KEY="peak-profile-v1";
+
+function interp(tab,v){
+  const t=[...tab].sort((a,b)=>a[0]-b[0]);
+  if(v<=t[0][0])return t[0][1]; if(v>=t[t.length-1][0])return t[t.length-1][1];
+  for(let i=0;i<t.length-1;i++){const[a,sa]=t[i],[b,sb]=t[i+1];
+    if(v>=a&&v<=b)return sa+(sb-sa)*(v-a)/(b-a);}
+}
+function parseVal(m,raw){
+  if(raw==null||String(raw).trim()==="")return null;
+  let s=String(raw).trim().replace(",",".");
+  if(m.time&&s.includes(":")){const[a,b]=s.split(":");return (+a)+(+b||0)/60}
+  const n=parseFloat(s);return isNaN(n)?null:n;
+}
+function scoreMetric(m,raw,p){
+  let v=parseVal(m,raw); if(v==null)return null;
+  if(m.ratio){if(!p.poids)return null;v=v/p.poids}
+  if(m.max)v=v/m.max*100;
+  return Math.round(interp(T[m.t],v));
+}
+function avg(a){a=a.filter(x=>x!=null);return a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):null}
+const today=()=>new Date().toLocaleDateString("en-CA");
+const fmtD=d=>d.split("-").reverse().join("/");
+const hist=(p,id)=>p.data[id]||(p.data[id]=[]);
+const lastOf=h=>h[h.length-1];
+const rnd=n=>Math.floor(Math.random()*n);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const colOf=g=>g==="physique"?"#ff7a3d":"#3db8ff";
+let current=null,view=null;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(current))}catch(_){}}
+function addEntry(p,id,v,d){const h=hist(p,id),i=h.findIndex(e=>e.d===d);if(i>=0)h.splice(i,1);h.push({d,v:String(v)});h.sort((a,b)=>a.d<b.d?-1:1)}
+
+function scoreStat(st,p){
+  const items=st.m.map(m=>{const h=hist(p,m.id),l=lastOf(h),f=h[0];
+    return{m,h,raw:l?l.v:"",s:l?scoreMetric(m,l.v,p):null,s0:f?scoreMetric(m,f.v,p):null}});
+  return{items,score:avg(items.map(i=>i.s)),score0:avg(items.map(i=>i.s0))};
+}
+function compute(p){
+  const out={};
+  for(const g in GROUPS){const stats=GROUPS[g].stats.map(st=>({st,...scoreStat(st,p)}));
+    out[g]={stats,score:avg(stats.map(s=>s.score))};}
+  out.total=avg([out.physique.score,out.mental.score]);return out;
+}
+function migrate(p){
+  const d={};
+  for(const g in GROUPS)for(const st of GROUPS[g].stats)for(const m of st.m){
+    let v=p.data[m.id];
+    if(typeof v==="string")v=v===""?[]:[{d:today(),v}];
+    d[m.id]=Array.isArray(v)?v:[];}
+  p.data=d;return p;
+}
+
+/* ===== Formulaire ===== */
+function buildForm(p){
+  const val=id=>{const l=p&&lastOf(hist(p,id));return l?l.v:""};
+  let h=p?`<p class="intro">Si tu changes une valeur, elle est ajoutée comme nouvelle mesure à la date d'aujourd'hui. Ton historique est conservé.</p>`:"";
+  h+=`<h2>Toi</h2>
+  <label>Prénom<input name="prenom" required value="${p?p.prenom:""}" autocomplete="given-name"></label>
+  <label>Date de naissance<input name="naissance" type="date" required value="${p?p.naissance:""}"></label>
+  <label>Taille <small>(cm)</small><input name="taille" type="number" inputmode="decimal" required value="${p?p.taille:""}"></label>
+  <label>Poids <small>(kg)</small><input name="poids" type="number" inputmode="decimal" required value="${p?p.poids:""}"></label>`;
+  for(const g in GROUPS){
+    h+=`<h2>${GROUPS[g].label}</h2>`;
+    for(const st of GROUPS[g].stats){
+      h+=`<h3>${st.label}</h3>`;
+      if(st.k==="connaissance")h+=`<p class="hint">Fais les tests de géographie sur jetpunk.com, puis entre ton résultat (nombre trouvé sur 197).</p>`;
+      for(const m of st.m){
+        if(m.test){h+=`<p class="hint">${m.label} : à faire dans l'app, depuis la fiche ${st.label}.</p>`;continue}
+        h+=`<label>${m.label} <small>${m.unit?"("+m.unit+")":""}</small><input name="${m.id}" inputmode="${m.time?"text":"decimal"}" placeholder="${m.ph||""}" value="${val(m.id)}"></label>`;
+      }
+    }
+  }
+  h+=`<button class="go" type="submit">${p?"Enregistrer":"Créer mon profil"}</button>`;
+  if(p)h+=`<button class="btn2 close" type="button" id="cancel">Annuler</button>`;
+  $("form").innerHTML=h;
+  if(p)$("cancel").onclick=()=>show("home");
+}
+$("form").addEventListener("submit",e=>{
+  e.preventDefault();
+  const fd=new FormData(e.target),g=k=>fd.get(k);
+  if(!g("prenom").trim()||!g("naissance")||!+g("taille")||!+g("poids")){
+    alert("Renseigne le prénom, la date de naissance, la taille et le poids.");return;}
+  const p=current||{data:{}};
+  Object.assign(p,{prenom:g("prenom").trim(),naissance:g("naissance"),taille:+g("taille"),poids:+g("poids")});
+  for(const gr in GROUPS)for(const st of GROUPS[gr].stats)for(const m of st.m){
+    if(m.test)continue;
+    const v=g(m.id).trim();if(v==="")continue;
+    const l=lastOf(hist(p,m.id));if(!l||l.v!==v)addEntry(p,m.id,v,today());
+  }
+  current=p;save();render(p);scrollTo(0,0);
+});
+
+/* ===== Accueil ===== */
+function render(p){
+  current=p;const r=compute(p);
+  $("name").textContent=p.prenom;
+  const age=Math.floor((Date.now()-new Date(p.naissance))/31557600000);
+  $("meta").textContent=`${age} ans · ${p.taille} cm · ${p.poids} kg`;
+  $("rp").textContent=rank(r.physique.score);$("rm").textContent=rank(r.mental.score);$("rg").textContent=rank(r.total);
+  for(const[g,el]of[["physique","colP"],["mental","colM"]]){
+    $(el).innerHTML="";
+    r[g].stats.forEach(s=>{
+      const b=document.createElement("button");b.className="stat";
+      b.innerHTML=`<span>${s.st.label}</span><span>${rank(s.score)}</span>`;
+      b.onclick=()=>openStat(g,s.st.k);$(el).appendChild(b);
+    });
+  }
+  show("home");
+}
+function show(w){$("home").hidden=w!=="home";$("setup").hidden=w!=="setup"}
+const closeSheet=()=>$("sheetBg").classList.remove("on");
+$("sheetBg").onclick=e=>{if(e.target.id==="sheetBg")closeSheet()};
+$("editBtn").onclick=()=>{buildForm(current);show("setup");scrollTo(0,0)};
+
+/* ===== Fiches ===== */
+const ST=(g,k)=>compute(current)[g].stats.find(s=>s.st.k===k);
+function delta(a,b){if(a==null||b==null||a===b)return"";const d=b-a;return `<b class="${d>0?"up":"dn"}">${d>0?"+":""}${d} pts</b>`}
+function barHTML(s0,s,col){
+  if(s==null)return`<div class="bar"></div>`;
+  if(s0==null||s0===s)return`<div class="bar"><i style="width:${s}%;background:${col}"></i></div>`;
+  const lo=Math.min(s0,s),hi=Math.max(s0,s);
+  return`<div class="bar"><i style="width:${lo}%;background:${col}"></i><i style="width:${hi-lo}%;background:${s>s0?"#4cd27a":"#ff5d5d"}"></i></div>`;
+}
+function openStat(g,k){
+  view={g,k};const s=ST(g,k),col=colOf(g);
+  let h=`<h2>${s.st.label} · ${rank(s.score)}</h2><small style="color:var(--mut)">Note : ${s.score==null?"non renseignée":s.score+" / 100"}</small> ${delta(s.score0,s.score)}`;
+  for(const i of s.items){
+    const shown=i.raw!==""?`${i.raw} ${i.m.unit}`:"non renseigné";
+    h+=`<div class="row go-m" data-m="${i.m.id}" role="button"><div class="top"><span>${i.m.label}</span><b>${i.s==null?"–":i.s+"/100"}</b></div>
+    <small>${shown}${i.s!=null?" · rang "+rank(i.s):""}</small> ${delta(i.s0,i.s)}
+    ${barHTML(i.s0,i.s,col)}<small>Historique et nouvelle mesure ›</small></div>`;
+  }
+  h+=`<button class="btn2 close" id="closeSheet">Fermer</button>`;
+  $("sheet").innerHTML=h;$("sheetBg").classList.add("on");
+  $("closeSheet").onclick=closeSheet;
+  document.querySelectorAll(".go-m").forEach(r=>r.onclick=()=>openMetric(g,k,r.dataset.m));
+}
+function chart(i,col){
+  const pts=i.h.map(e=>({t:new Date(e.d).getTime(),s:scoreMetric(i.m,e.v,current)})).filter(q=>q.s!=null);
+  if(!pts.length)return"";
+  const W=300,H=130,L=28,R=12,Tp=16,B=22,t0=pts[0].t,t1=pts[pts.length-1].t,n1=pts.length-1;
+  const X=(q,n)=>L+(W-L-R)*(n1===0?.5:(t1===t0?n/n1:(q.t-t0)/(t1-t0)));
+  const Y=s=>Tp+(H-Tp-B)*(1-s/100),UP="#4cd27a",DN="#ff5d5d";
+  let o=[0,50,100].map(v=>`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#2e333b"/><text x="${L-5}" y="${Y(v)+4}" text-anchor="end" font-size="10" fill="#8b919c">${v}</text>`).join("");
+  pts.forEach((q,n)=>{if(n){const a=pts[n-1];o+=`<line x1="${X(a,n-1)}" y1="${Y(a.s)}" x2="${X(q,n)}" y2="${Y(q.s)}" stroke="${q.s>=a.s?UP:DN}" stroke-width="3" stroke-linecap="round"/>`}});
+  pts.forEach((q,n)=>{const c=n===0?col:(q.s>=pts[n-1].s?UP:DN);
+    o+=`<circle cx="${X(q,n)}" cy="${Y(q.s)}" r="4.5" fill="${c}"/><text x="${X(q,n)}" y="${Y(q.s)-9}" text-anchor="middle" font-size="10" fill="#f2efe9">${q.s}</text>`});
+  o+=`<text x="${L}" y="${H-5}" font-size="10" fill="#8b919c">${fmtD(i.h[0].d)}</text><text x="${W-R}" y="${H-5}" text-anchor="end" font-size="10" fill="#8b919c">${fmtD(lastOf(i.h).d)}</text>`;
+  return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;margin:14px 0 4px" role="img" aria-label="Courbe de progression">${o}</svg>`;
+}
+function openMetric(g,k,id){
+  view={g,k,id};const s=ST(g,k),i=s.items.find(x=>x.m.id===id),m=i.m,col=colOf(g);
+  let h=`<button class="back" id="back">‹ ${s.st.label}</button><h2>${m.label}</h2>
+  <small style="color:var(--mut)">${i.s==null?"Aucune mesure":`Dernière : ${i.raw} ${m.unit} · ${i.s}/100 · rang ${rank(i.s)}`}</small> ${delta(i.s0,i.s)}
+  ${chart(i,col)}`;
+  h+=m.link?`<p class="hint">Fais le test sur <a href="https://www.jetpunk.com" target="_blank" rel="noopener" style="color:var(--men)">jetpunk.com</a>, puis entre ton résultat ci-dessous.</p>`:"";
+  h+=m.test?`<button class="go" id="runTest" style="margin-top:12px">Faire le test</button>`
+   :`<div class="addrow"><input id="nv" inputmode="${m.time?"text":"decimal"}" placeholder="Nouvelle valeur (${m.unit})"><input id="nd" type="date" value="${today()}"></div><button class="go" id="addBtn" style="margin-top:12px">Ajouter cette mesure</button>`;
+  h+=`<div style="margin-top:18px">`+i.h.slice().reverse().map(e=>{const sc=scoreMetric(m,e.v,current);
+    return`<div class="row"><div class="top"><span>${fmtD(e.d)}</span><span>${e.v} ${m.unit} · ${sc==null?"–":sc+"/100"} <button class="x" data-d="${e.d}" aria-label="Supprimer">✕</button></span></div></div>`}).join("")+`</div>`;
+  $("sheet").innerHTML=h;$("sheetBg").classList.add("on");
+  $("back").onclick=()=>openStat(g,k);
+  if(m.test)$("runTest").onclick=()=>{closeSheet();m.test==="mem"?runMem(m):runCalc(m)};
+  else $("addBtn").onclick=()=>{const v=$("nv").value.trim();
+    if(parseVal(m,v)==null){alert("Entre une valeur valide.");return}
+    addEntry(current,id,v,$("nd").value||today());save();render(current);openMetric(g,k,id)};
+  document.querySelectorAll(".x").forEach(b=>b.onclick=()=>{
+    if(!confirm("Supprimer cette mesure ?"))return;
+    const hh=hist(current,id);hh.splice(hh.findIndex(e=>e.d===b.dataset.d),1);save();render(current);openMetric(g,k,id)});
+}
+
+/* ===== Tests dans l'app ===== */
+function openTest(){
+  const ov=$("ov");ov.classList.add("on");
+  const tk={off:false,res:null,
+    set(h){ov.innerHTML=h+`<button class="btn2" id="quit" style="margin-top:28px">Quitter</button>`;$("quit").onclick=()=>tk.close()},
+    close(){tk.off=true;ov.classList.remove("on");ov.innerHTML="";if(tk.res)tk.res(null)},
+    ask(q){return new Promise(res=>{tk.res=res;
+      tk.set(`<p class="intro" style="font-size:18px">${q}</p><form id="af"><input id="ai" inputmode="numeric" autocomplete="off"><button class="go" type="submit">Valider</button></form>`);
+      $("af").onsubmit=e=>{e.preventDefault();tk.res=null;res($("ai").value.trim())};$("ai").focus()})}};
+  return tk;
+}
+function finishTest(tk,m,val,txt){
+  tk.set(`<h2>${txt}</h2><p class="big" style="height:auto">${val}</p><button class="go" id="sv">Enregistrer le résultat</button>`);
+  $("sv").onclick=()=>{addEntry(current,m.id,val,today());save();tk.close();render(current);openMetric(view.g,view.k,m.id)};
+}
+function runMem(m){
+  const tk=openTest(),R=["A","2","3","4","5","6","7","8","9","10","J","Q","K"],S=["♠","♥","♦","♣"],deck=[];
+  R.forEach(r=>S.forEach(c=>deck.push({r,c,st:0})));
+  for(let i=deck.length-1;i>0;i--){const j=rnd(i+1);[deck[i],deck[j]]=[deck[j],deck[i]]}
+  let first=-1,turns=0,left=52,lock=false;
+  tk.set(`<div><div class="mgh">Tours : <b id="tn">0</b> · Cartes restantes : <b id="cl">52</b></div>
+  <div class="grid">${deck.map((_,i)=>`<button class="cd" aria-label="Carte ${i+1}"></button>`).join("")}</div>
+  <p class="hint">Retourne 2 cartes de même valeur pour les retirer. Moins de tours = meilleure note.</p></div>`);
+  const els=[...document.querySelectorAll(".cd")];
+  const up=i=>{const d=deck[i];els[i].className="cd up"+(d.c==="♥"||d.c==="♦"?" red":"");els[i].innerHTML=`${d.r}<br>${d.c}`};
+  const down=i=>{els[i].className="cd";els[i].innerHTML=""};
+  els.forEach((e,i)=>e.onclick=async()=>{
+    if(lock||tk.off||deck[i].st)return;
+    deck[i].st=1;up(i);
+    if(first<0){first=i;return}
+    const a=first;first=-1;turns++;$("tn").textContent=turns;lock=true;
+    await sleep(850);if(tk.off)return;
+    if(deck[a].r===deck[i].r){
+      deck[a].st=deck[i].st=2;els[a].className=els[i].className="cd gone";left-=2;$("cl").textContent=left;
+      if(!left){finishTest(tk,m,turns,`Terminé en ${turns} tours`);return}
+    }else{deck[a].st=deck[i].st=0;down(a);down(i)}
+    lock=false;
+  });
+}
+function runCalc(m){
+  const tk=openTest();let sc=0,ans=0;const end=Date.now()+60000;
+  tk.set(`<div class="big" id="tm" style="height:auto;font-size:40px">60</div><div class="big" id="q" style="font-size:44px;height:70px"></div><form id="af"><input id="ai" inputmode="numeric" autocomplete="off"><button class="go" type="submit">OK</button></form>`);
+  const nq=()=>{const t=Math.random();let a,b,s;
+    if(t<.4){a=10+rnd(90);b=10+rnd(90);s=`${a} + ${b}`;ans=a+b}
+    else if(t<.7){a=20+rnd(80);b=5+rnd(a-10);s=`${a} − ${b}`;ans=a-b}
+    else{a=2+rnd(11);b=2+rnd(11);s=`${a} × ${b}`;ans=a*b}
+    $("q").textContent=s;$("ai").value=""};
+  $("af").onsubmit=e=>{e.preventDefault();if(parseInt($("ai").value,10)===ans)sc++;nq();$("ai").focus()};
+  nq();$("ai").focus();
+  const iv=setInterval(()=>{
+    if(tk.off){clearInterval(iv);return}
+    const r=Math.ceil((end-Date.now())/1000);
+    if(r<=0){clearInterval(iv);finishTest(tk,m,sc,`Temps écoulé : ${sc} bonne${sc>1?"s":""} réponse${sc>1?"s":""}`)}
+    else $("tm").textContent=r;
+  },250);
+}
+
+/* ===== Démarrage ===== */
+let saved=null;try{saved=JSON.parse(localStorage.getItem(KEY))}catch(_){}
+if(saved){current=migrate(saved);buildForm(current);render(current)}else{buildForm(null);show("setup")}
+if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
