@@ -103,19 +103,36 @@ button.go{margin-top:28px;width:100%;padding:16px;border:0;border-radius:14px;ba
 .intro{color:var(--mut);font-size:14px;line-height:1.5;margin:10px 0 0;text-align:center}
 .hint{color:var(--mut);font-size:12px;margin:6px 0 0}
 [hidden]{display:none!important}
+.ztop{display:flex;justify-content:space-between;align-items:center}
+.ztro{position:static}
+.zmod{background:none;border:0;color:var(--mut);font:inherit;font-size:15px;text-decoration:underline;padding:8px 4px}
+#home .zhead{margin-top:-34px}
+.zav{width:190px;height:190px;margin:16px auto 0;box-shadow:0 0 44px color-mix(in srgb,var(--fc) 45%,transparent)}
+.zfn{text-align:center;font-size:25px;font-weight:700;letter-spacing:2px;color:var(--fc);margin-top:10px}
+.zl2{text-align:center;font-size:12px;letter-spacing:4px;color:#9fe8bf;margin-top:8px}
+.zbig{font-size:68px;text-align:center}
+.zpt{color:var(--mut)}
+.zlist{margin-top:14px}
+.zst{display:flex;align-items:center;gap:14px;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:13px 2px;color:var(--txt);font:inherit;text-align:left}
+.zst .zk{width:92px}.zst .zb{flex:1;height:8px;border-radius:4px}
+.zv{width:70px;text-align:right}.zn2{display:block;font-size:21px;line-height:1}
+.zd{display:block;font-size:12px}.zd b{font-weight:600}
 </style>
 </head>
 <body>
 <main>
   <div id="home" class="zhome" hidden>
-    <button class="ztro" id="rankBtn" aria-label="Classement des formes"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></button>
+    <div class="ztop">
+      <button class="ztro" id="rankBtn" aria-label="Classement des formes"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></button>
+      <button class="zmod" id="editBtn">Modifier</button>
+    </div>
     <div class="zhead"><h1 id="name"></h1><div class="sub" id="meta"></div></div>
-    <div class="zprog"><div class="zpl"><span id="pf"></span><span id="pn"></span></div><div class="zbar"><i id="pfill"></i></div><div class="zpt" id="ptxt"></div></div>
-    <div class="zhero"><div class="zemb"><div><small>FORME ACTUELLE</small><b id="fn"></b></div></div><div class="zav" id="avf"></div></div>
-    <div class="zsc"><div class="zt"><span>SCOUTER</span><span>ANALYSE ●</span></div><div class="zl">NIVEAU DE PUISSANCE</div><div class="zbig" id="pw"></div><div class="zmini" id="mini"></div></div>
-    <div class="zlad" id="ladder"></div><div class="zcap" id="lcap"></div>
-    <div class="zcards" id="cards"></div>
-    <button class="edit" id="editBtn">Modifier mes informations</button>
+    <div class="zav" id="avf"></div>
+    <div class="zfn" id="fn"></div>
+    <div class="zl2">NIVEAU DE PUISSANCE</div>
+    <div class="zbig" id="pw"></div>
+    <div class="zprog"><div class="zbar"><i id="pfill"></i></div><div class="zpt" id="ptxt"></div></div>
+    <div class="zlist" id="cards"></div>
   </div>
   <div id="rank" class="zhome" hidden>
     <button class="back" id="rankBack">‹ Retour</button>
@@ -299,17 +316,13 @@ function render(p){
   $("name").textContent=p.prenom;
   const age=Math.floor((Date.now()-new Date(p.naissance))/31557600000);
   $("meta").textContent=`GUERRIER · ${age} ANS · ${p.taille} CM · ${p.poids} KG`;
-  $("pf").textContent=f.n;$("pn").textContent=nx?nx.n:"Forme ultime";
-  $("pfill").style.width=(nx?Math.max(0,Math.min(100,(sc-f.min)/(nx.min-f.min)*100)):100)+"%";
-  $("ptxt").textContent=nx?`Encore ${pw(nx.min-sc)} de puissance avant ${nx.n}`:"Tu as atteint la forme ultime";
-  $("fn").textContent=f.n.toUpperCase();$("avf").innerHTML=avatar(f,136);
+  $("avf").innerHTML=avatar(f,184);$("fn").textContent=f.n.toUpperCase();
   $("pw").textContent=pw(sc);
-  $("mini").innerHTML=r.physique.stats.map(s=>`<div><span>${s.st.label.toUpperCase()}</span><b>${pw(s.score)}</b></div>`).join("");
-  $("ladder").innerHTML=FORMS.map((x,j)=>`<i style="background:${j<=i?x.c:"#2a3040"}"></i>`).join("");
-  $("lcap").textContent=`${i+1} FORME${i?"S":""} SUR 8 DÉBLOQUÉE${i?"S":""}`;
+  $("pfill").style.width=(nx?Math.max(0,Math.min(100,(sc-f.min)/(nx.min-f.min)*100)):100)+"%";
+  $("ptxt").textContent=nx?`Encore ${pw(nx.min-sc)} avant ${nx.n}`:"Tu as atteint la forme ultime";
   $("cards").innerHTML=r.physique.stats.map(s=>{const fo=formOf(s.score);
-    return`<button class="zcard" data-k="${s.st.k}"><span class="zk">${s.st.label.toUpperCase()}</span><span class="zf" style="color:${fo.c}">${fo.n}</span><span class="zr"><span>${pw(s.score)}</span>${delta(s.score0,s.score)}</span><span class="zb"><i style="width:${s.score||0}%;background:${fo.c}"></i></span></button>`}).join("");
-  document.querySelectorAll(".zcard").forEach(b=>b.onclick=()=>openStat("physique",b.dataset.k));
+    return`<button class="zst" data-k="${s.st.k}"><span class="zk">${s.st.label.toUpperCase()}</span><span class="zb"><i style="width:${s.score||0}%;background:${fo.c}"></i></span><span class="zv"><b class="zn2">${pw(s.score)}</b><span class="zd">${delta(s.score0,s.score)}</span></span></button>`}).join("");
+  document.querySelectorAll(".zst").forEach(b=>b.onclick=()=>openStat("physique",b.dataset.k));
   show("home");
 }
 function renderRank(){
