@@ -153,16 +153,16 @@ button.go{margin-top:28px;width:100%;padding:16px;border:0;border-radius:14px;ba
 <script>
 /* ===== Barèmes : [valeur, note/100]. Modifie-les librement. ===== */
 const T={
- squat:[[.5,10],[1,40],[1.5,65],[2,85],[2.5,100]],
- bench:[[.3,10],[.7,40],[1,65],[1.5,90],[1.75,100]],
- pull:[[0,5],[5,35],[10,60],[20,85],[30,100]],
- push:[[5,10],[20,35],[40,60],[60,80],[100,100]],
- m100:[[10.5,100],[11.5,90],[12.5,70],[13.5,50],[15,30],[18,10]],
- m400:[[48,100],[52,90],[60,70],[70,50],[85,30],[100,10]],
- k5:[[15,100],[19,90],[23,70],[27,50],[32,30],[40,10]],
- k10:[[31,100],[40,90],[48,70],[57,50],[68,30],[85,10]],
- vert:[[15,10],[30,30],[45,55],[60,80],[75,100]],
- horiz:[[100,10],[170,35],[220,60],[260,85],[300,100]],
+ squat:[[0,0],[60,10],[90,22],[120,38],[150,55],[180,72],[210,88],[250,100]],
+ bench:[[0,0],[40,10],[60,22],[80,38],[100,55],[120,72],[140,88],[170,100]],
+ pull:[[0,0],[2,8],[5,20],[10,38],[15,55],[20,70],[30,90],[40,100]],
+ push:[[0,0],[10,8],[25,20],[40,35],[60,55],[80,72],[100,85],[150,100]],
+ m100:[[10,100],[10.6,90],[11.5,75],[12.5,55],[13.5,38],[15,20],[17,5],[19,0]],
+ m400:[[45,100],[48,90],[54,75],[60,55],[70,35],[85,15],[100,0]],
+ k5:[[13,100],[15,90],[18,75],[21,58],[25,40],[30,20],[40,0]],
+ k10:[[28,100],[32,90],[38,75],[45,58],[52,40],[62,20],[85,0]],
+ vert:[[15,0],[30,15],[40,30],[50,48],[60,65],[70,80],[85,95],[100,100]],
+ horiz:[[100,0],[150,10],[190,28],[220,48],[250,68],[280,88],[310,100]],
  calc:[[3,10],[10,40],[20,70],[35,100]],
  elo:[[400,10],[800,30],[1200,50],[1600,70],[2000,90],[2400,100]],
  screen:[[.5,100],[1.5,90],[3,70],[5,45],[7,25],[10,5]],
@@ -170,17 +170,22 @@ const T={
  study:[[0,5],[3,25],[7,50],[14,75],[25,95],[35,100]],
  avg:[[5,10],[10,40],[14,70],[17,90],[20,100]],
  pct:[[0,0],[100,100]],
+ imc:[[14,0],[16,10],[18,45],[20,80],[22,100],[24,100],[26,75],[28,50],[31,25],[35,8],[40,0]],
+ bras:[[25,0],[30,10],[34,25],[38,45],[42,65],[46,85],[50,100]],
+ pec:[[80,0],[90,10],[100,28],[108,48],[116,68],[124,88],[132,100]],
+ cuisse:[[45,0],[50,10],[56,28],[62,48],[68,68],[74,88],[80,100]],
+ waist:[[.35,40],[.40,85],[.43,100],[.46,90],[.50,60],[.55,30],[.60,10],[.70,0]],
  memo:[[27,100],[33,90],[40,75],[48,55],[60,35],[80,10]],
  geo:[[0,0],[25,30],[50,60],[75,85],[100,100]]
 };
 /* type: n = nombre, t = temps mm:ss ; ratio = divisé par le poids */
 const GROUPS={
- physique:{label:"Physique",stats:[
+ physique:{label:"Mesures et performances",stats:[
   {k:"force",label:"Force",m:[
-   {id:"squat",label:"Squat (1 répétition max)",unit:"kg",t:"squat",ratio:1},
+   {id:"squat",label:"Squat (1 répétition max)",unit:"kg",t:"squat"},
    {id:"tractions",label:"Tractions (max d'affilée)",unit:"reps",t:"pull"},
    {id:"pompes",label:"Pompes (max d'affilée)",unit:"reps",t:"push"},
-   {id:"bench",label:"Développé couché (1 RM)",unit:"kg",t:"bench",ratio:1}]},
+   {id:"bench",label:"Développé couché (1 RM)",unit:"kg",t:"bench"}]},
   {k:"vitesse",label:"Vitesse",m:[
    {id:"t100",label:"100 m",unit:"secondes",t:"m100",ph:"13.2"},
    {id:"t400",label:"400 m",unit:"secondes",t:"m400",ph:"62"}]},
@@ -189,7 +194,13 @@ const GROUPS={
    {id:"t10k",label:"10 km",unit:"mm:ss",t:"k10",time:1,ph:"55:00"}]},
   {k:"agilite",label:"Agilité",m:[
    {id:"vert",label:"Détente sèche verticale",unit:"cm",t:"vert"},
-   {id:"horiz",label:"Détente sèche horizontale",unit:"cm",t:"horiz"}]}]}
+   {id:"horiz",label:"Détente sèche horizontale",unit:"cm",t:"horiz"}]},
+  {k:"physique",label:"Physique",m:[
+   {id:"imc",label:"Rapport taille / poids (IMC)",unit:"kg/m²",t:"imc",auto:1},
+   {id:"bras",label:"Tour de bras (contracté)",unit:"cm",t:"bras"},
+   {id:"pec",label:"Tour de pec",unit:"cm",t:"pec"},
+   {id:"tour_taille",label:"Tour de taille",unit:"cm",t:"waist",rel:"taille"},
+   {id:"cuisse",label:"Tour de cuisse",unit:"cm",t:"cuisse"}]}]}
 };
 const FORMS=[
  {n:"Forme de base",min:0,c:"#8b919c",m:"curly",h:"#141414",a:null,e:"#141414"},
@@ -235,6 +246,7 @@ function scoreMetric(m,raw,p){
   let v=parseVal(m,raw); if(v==null)return null;
   if(m.ratio){if(!p.poids)return null;v=v/p.poids}
   if(m.max)v=v/m.max*100;
+  if(m.rel){if(!p[m.rel])return null;v=v/p[m.rel]}
   return Math.round(interp(T[m.t],v));
 }
 function avg(a){a=a.filter(x=>x!=null);return a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):null}
@@ -249,6 +261,11 @@ let current=null,view=null;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(current))}catch(_){}}
 function addEntry(p,id,v,d){const h=hist(p,id),i=h.findIndex(e=>e.d===d);if(i>=0)h.splice(i,1);h.push({d,v:String(v)});h.sort((a,b)=>a.d<b.d?-1:1)}
 
+function syncImc(p){
+  if(!p.taille||!p.poids)return;
+  const v=(p.poids/((p.taille/100)**2)).toFixed(1),l=lastOf(hist(p,"imc"));
+  if(!l||l.v!==v)addEntry(p,"imc",v,today());
+}
 function scoreStat(st,p){
   const items=st.m.map(m=>{const h=hist(p,m.id),l=lastOf(h),f=h[0];
     return{m,h,raw:l?l.v:"",s:l?scoreMetric(m,l.v,p):null,s0:f?scoreMetric(m,f.v,p):null}});
@@ -266,7 +283,7 @@ function migrate(p){
     let v=p.data[m.id];
     if(typeof v==="string")v=v===""?[]:[{d:today(),v}];
     d[m.id]=Array.isArray(v)?v:[];}
-  p.data=d;return p;
+  p.data=d;syncImc(p);return p;
 }
 
 /* ===== Formulaire ===== */
@@ -282,9 +299,9 @@ function buildForm(p){
     h+=`<h2>${GROUPS[g].label}</h2>`;
     for(const st of GROUPS[g].stats){
       h+=`<h3>${st.label}</h3>`;
-      if(st.k==="connaissance")h+=`<p class="hint">Fais les tests de géographie sur jetpunk.com, puis entre ton résultat (nombre trouvé sur 197).</p>`;
+      if(st.k==="physique")h+=`<p class="hint">Mesure-toi avec un mètre ruban : bras contracté, pec au repos, taille au nombril, cuisse à mi-hauteur. Le rapport taille / poids est calculé avec ta taille et ton poids.</p>`;
       for(const m of st.m){
-        if(m.test){h+=`<p class="hint">${m.label} : à faire dans l'app, depuis la fiche ${st.label}.</p>`;continue}
+        if(m.auto)continue;if(m.test){h+=`<p class="hint">${m.label} : à faire dans l'app, depuis la fiche ${st.label}.</p>`;continue}
         h+=`<label>${m.label} <small>${m.unit?"("+m.unit+")":""}</small><input name="${m.id}" inputmode="${m.time?"text":"decimal"}" placeholder="${m.ph||""}" value="${val(m.id)}"></label>`;
       }
     }
@@ -302,11 +319,11 @@ $("form").addEventListener("submit",e=>{
   const p=current||{data:{}};
   Object.assign(p,{prenom:g("prenom").trim(),naissance:g("naissance"),taille:+g("taille"),poids:+g("poids")});
   for(const gr in GROUPS)for(const st of GROUPS[gr].stats)for(const m of st.m){
-    if(m.test)continue;
+    if(m.test||m.auto)continue;
     const v=g(m.id).trim();if(v==="")continue;
     const l=lastOf(hist(p,m.id));if(!l||l.v!==v)addEntry(p,m.id,v,today());
   }
-  current=p;save();render(p);scrollTo(0,0);
+  syncImc(p);current=p;save();render(p);scrollTo(0,0);
 });
 
 /* ===== Accueil ===== */
@@ -380,13 +397,13 @@ function openMetric(g,k,id){
   <small style="color:var(--mut)">${i.s==null?"Aucune mesure":`Dernière : ${i.raw} ${m.unit} · ${pw(i.s)} · ${rank(i.s)}`}</small> ${delta(i.s0,i.s)}
   ${chart(i,col)}`;
   h+=m.link?`<p class="hint">Fais le test sur <a href="https://www.jetpunk.com" target="_blank" rel="noopener" style="color:var(--men)">jetpunk.com</a>, puis entre ton résultat ci-dessous.</p>`:"";
-  h+=m.test?`<button class="go" id="runTest" style="margin-top:12px">Faire le test</button>`
+  h+=m.auto?`<p class="hint" style="margin-top:12px">Calculé automatiquement avec ta taille et ton poids. Mets-les à jour avec « Modifier » sur l'accueil.</p>`:m.test?`<button class="go" id="runTest" style="margin-top:12px">Faire le test</button>`
    :`<div class="addrow"><input id="nv" inputmode="${m.time?"text":"decimal"}" placeholder="Nouvelle valeur (${m.unit})"><input id="nd" type="date" value="${today()}"></div><button class="go" id="addBtn" style="margin-top:12px">Ajouter cette mesure</button>`;
   h+=`<div style="margin-top:18px">`+i.h.slice().reverse().map(e=>{const sc=scoreMetric(m,e.v,current);
     return`<div class="row"><div class="top"><span>${fmtD(e.d)}</span><span>${e.v} ${m.unit} · ${pw(sc)} <button class="x" data-d="${e.d}" aria-label="Supprimer">✕</button></span></div></div>`}).join("")+`</div>`;
   $("sheet").innerHTML=h;$("sheetBg").classList.add("on");
   $("back").onclick=()=>openStat(g,k);
-  if(m.test)$("runTest").onclick=()=>{closeSheet();m.test==="mem"?runMem(m):runCalc(m)};
+  if(m.auto){}
   else $("addBtn").onclick=()=>{const v=$("nv").value.trim();
     if(parseVal(m,v)==null){alert("Entre une valeur valide.");return}
     addEntry(current,id,v,$("nd").value||today());save();render(current);openMetric(g,k,id)};
