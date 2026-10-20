@@ -119,6 +119,16 @@ button.go{margin-top:28px;width:100%;padding:16px;border:0;border-radius:14px;ba
 .zd{display:block;font-size:12px}.zd b{font-weight:600}
 .zst .zb{display:flex}
 .zd{font-size:13px}
+select{width:100%;margin-top:5px;padding:13px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--txt);font:inherit;font-size:16px}
+.addrow{flex-direction:column;gap:8px}.addrow input,.addrow input:first-child{margin-top:0;min-height:48px;flex:none}
+.gl{color:#ffb21a}
+.zav{display:block;padding:0;cursor:pointer}
+.zhint{text-align:center;font-size:13px;color:var(--mut);margin-top:6px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.sw{width:36px;height:36px;border-radius:50%;border:2px solid var(--line);padding:0}
+.sw.on{border-color:#ffb21a;box-shadow:0 0 0 2px #ffb21a55}
+.chip{padding:9px 14px;border-radius:20px;border:1px solid var(--line);background:none;color:var(--txt);font:inherit;font-size:15px}
+.chip.on{border-color:#ffb21a;color:#ffb21a;background:#231d0c}
 </style>
 </head>
 <body>
@@ -129,7 +139,8 @@ button.go{margin-top:28px;width:100%;padding:16px;border:0;border-radius:14px;ba
       <button class="zmod" id="editBtn">Modifier</button>
     </div>
     <div class="zhead"><h1 id="name"></h1><div class="sub" id="meta"></div></div>
-    <div class="zav" id="avf"></div>
+    <button class="zav" id="avf" aria-label="Personnaliser l'avatar"></button>
+    <div class="zhint" id="avh">Touche l'avatar pour le personnaliser</div>
     <div class="zfn" id="fn"></div>
     <div class="zl2">NIVEAU DE PUISSANCE</div>
     <div class="zbig" id="pw"></div>
@@ -173,6 +184,7 @@ const T={
  avg:[[5,10],[10,40],[14,70],[17,90],[20,100]],
  pct:[[0,0],[100,100]],
  imc:[[14,0],[16,10],[18,45],[20,80],[22,100],[24,100],[26,75],[28,50],[31,25],[35,8],[40,0]],
+ imcF:[[13,0],[15,10],[17,45],[19,80],[21,100],[23,100],[25,75],[27,50],[30,25],[34,8],[39,0]],
  bras:[[25,0],[30,10],[34,25],[38,45],[42,65],[46,85],[50,100]],
  pec:[[80,0],[90,10],[100,28],[108,48],[116,68],[124,88],[132,100]],
  cuisse:[[45,0],[50,10],[56,28],[62,48],[68,68],[74,88],[80,100]],
@@ -189,7 +201,7 @@ const GROUPS={
    {id:"pompes",label:"Pompes (max d'affilée)",unit:"reps",t:"push"},
    {id:"bench",label:"Développé couché (1 RM)",unit:"kg",t:"bench"}]},
   {k:"vitesse",label:"Vitesse",m:[
-   {id:"t100",label:"100 m",unit:"secondes",t:"m100",ph:"13.2"},
+   {id:"t100",label:"100 m",unit:"secondes",t:"m100",dec:1,ph:"13.2"},
    {id:"t400",label:"400 m",unit:"secondes",t:"m400",ph:"62"}]},
   {k:"endurance",label:"Endurance",m:[
    {id:"t5k",label:"5 km",unit:"mm:ss",t:"k5",time:1,ph:"25:30"},
@@ -198,35 +210,58 @@ const GROUPS={
    {id:"vert",label:"Détente sèche verticale",unit:"cm",t:"vert"},
    {id:"horiz",label:"Détente sèche horizontale",unit:"cm",t:"horiz"}]},
   {k:"physique",label:"Physique",m:[
-   {id:"imc",label:"Rapport taille / poids (IMC)",unit:"kg/m²",t:"imc",auto:1},
+   {id:"imc",label:"Rapport taille / poids (IMC)",unit:"kg/m²",t:"imc",dec:1,auto:1},
    {id:"bras",label:"Tour de bras (contracté)",unit:"cm",t:"bras"},
    {id:"pec",label:"Tour de pec",unit:"cm",t:"pec"},
    {id:"tour_taille",label:"Tour de taille",unit:"cm",t:"waist",rel:"taille"},
    {id:"cuisse",label:"Tour de cuisse",unit:"cm",t:"cuisse"}]}]}
 };
 const FORMS=[
- {n:"Forme de base",min:0,c:"#8b919c",m:"curly",h:"#141414",a:null,e:"#141414"},
- {n:"Kaioken",min:15,c:"#ff4a3d",m:"curly",h:"#141414",a:"#ff4a3d",e:"#141414"},
- {n:"Super Saiyan",min:30,c:"#ffd23f",m:"spiky",h:"#ffd23f",a:"#ffd23f",e:"#20d3c2"},
- {n:"Super Saiyan 2",min:45,c:"#ffb21a",m:"spiky",h:"#ffd23f",a:"#ffb21a",e:"#20d3c2"},
- {n:"Super Saiyan 3",min:60,c:"#ff8a1f",m:"spiky3",h:"#ffcc33",a:"#ff8a1f",e:"#20d3c2"},
- {n:"Super Saiyan God",min:70,c:"#ff2e63",m:"spiky",h:"#ff2e63",a:"#ff2e63",e:"#ff2e63"},
- {n:"Super Saiyan Blue",min:80,c:"#3db8ff",m:"spiky",h:"#3db8ff",a:"#3db8ff",e:"#3db8ff"},
- {n:"Ultra Instinct",min:90,c:"#cfd8ff",m:"spiky",h:"#cfd8ff",a:"#cfd8ff",e:"#cfd8ff"}];
+ {n:"Forme de base",min:0,c:"#8b919c",b:1,a:null},
+ {n:"Kaioken",min:15,c:"#ff4a3d",b:1,a:"#ff4a3d"},
+ {n:"Super Saiyan",min:30,c:"#ffd23f",m:"ss",h:"#ffd23f",a:"#ffd23f",e:"#20d3c2"},
+ {n:"Super Saiyan 2",min:45,c:"#ffb21a",m:"ss",h:"#ffd23f",a:"#ffb21a",e:"#20d3c2"},
+ {n:"Super Saiyan 3",min:60,c:"#ff8a1f",m:"ss3",h:"#ffcc33",a:"#ff8a1f",e:"#20d3c2"},
+ {n:"Super Saiyan God",min:70,c:"#ff2e63",m:"ss",h:"#ff2e63",a:"#ff2e63",e:"#ff2e63"},
+ {n:"Super Saiyan Blue",min:80,c:"#3db8ff",m:"ss",h:"#3db8ff",a:"#3db8ff",e:"#3db8ff"},
+ {n:"Ultra Instinct",min:90,c:"#cfd8ff",m:"ss",h:"#cfd8ff",a:"#cfd8ff",e:"#cfd8ff"}];
 const formIdx=s=>s==null?0:FORMS.reduce((k,f,i)=>s>=f.min?i:k,0);
 const formOf=s=>FORMS[formIdx(s)];
 const rank=s=>s==null?"–":formOf(s).n;
 const pw=s=>s==null?"–":(s*100).toLocaleString("fr-FR");
-function avatar(f,size){
-  const o=[];
+const DEF={style:"short",hair:"#4a2f1d",skin:"#eab98f",eyes:"#5a3a1e",outfit:"neutre"};
+const SK=["#f6d7bd","#eab98f","#c8946a","#a9724b","#7c4a2d","#4b2b1b"];
+const HC=["#141414","#4a2f1d","#8a5a2b","#b5532a","#c9a24a","#9aa1ad","#f0f0f0","#2a4a9a"];
+const EC=["#2b2b2b","#5a3a1e","#2f7d4f","#3d78d8","#7a8a99","#20a8a0"];
+const STYLES={buzz:"Rasé",short:"Court",curly:"Bouclé",spiky:"Piquant",long:"Long"};
+const OUTFITS={neutre:"Neutre",gi:"Kimono orange",violet:"Tenue violette",armure:"Armure saiyan"};
+function shade(c,k){const n=parseInt(c.slice(1),16);return"#"+[n>>16,(n>>8)&255,n&255].map(x=>Math.max(0,Math.min(255,Math.round(x*k))).toString(16).padStart(2,"0")).join("")}
+function hairBack(st,c){return({long:`<path d="M30 40 L24 76 L38 62Z M70 40 L76 76 L62 62Z" fill="${c}"/>`,ss3:`<path d="M30 30 L20 80 L37 58Z M70 30 L80 80 L63 58Z" fill="${c}"/>`})[st]||""}
+function hairFront(st,c){return({
+ buzz:`<path d="M32 38 Q32 24 50 23 Q68 24 68 38 Q60 32 50 32 Q40 32 32 38Z" fill="${c}"/>`,
+ short:`<path d="M30 42 Q28 20 50 19 Q72 20 70 42 Q64 30 50 29 Q36 30 30 42Z" fill="${c}"/>`,
+ curly:`<path d="M31 42 Q29 22 50 20 Q71 22 69 42 Q60 31 50 31 Q40 31 31 42Z" fill="${c}"/>`+[[33,27],[42,20],[52,18],[61,21],[68,28],[30,37],[70,37]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="7" fill="${c}"/>`).join(""),
+ spiky:`<path d="M31 40 L27 26 L37 31 L40 17 L48 29 L55 15 L60 30 L70 22 L69 40 Q50 28 31 40Z" fill="${c}"/>`,
+ long:`<path d="M30 42 Q26 20 50 18 Q74 20 70 42 Q64 30 50 29 Q36 30 30 42Z" fill="${c}"/>`,
+ ss:`<path d="M31 40 L24 20 L37 28 L38 8 L48 25 L56 6 L61 26 L74 12 L70 30 L69 40 Q50 27 31 40Z" fill="${c}"/>`,
+ ss3:`<path d="M31 40 L18 16 L36 26 L34 3 L48 22 L58 2 L62 24 L80 10 L70 32 L69 40 Q50 27 31 40Z" fill="${c}"/>`})[st]||""}
+function outfitSVG(k){
+  const B='<path d="M10 100 Q14 72 50 68 Q86 72 90 100Z" fill="';
+  return({
+   neutre:B+'#6b7280"/><path d="M40 69 Q50 77 60 69 Q50 65 40 69Z" fill="#4b5563"/>',
+   gi:B+'#ff7a1a"/><path d="M39 69 L50 91 L61 69 Q50 65 39 69Z" fill="#1f4fd8"/><rect x="10" y="94" width="80" height="6" fill="#1f4fd8"/>',
+   violet:B+'#6a35b0"/><path d="M39 69 L50 88 L61 69 Q50 65 39 69Z" fill="#3b1d6e"/><rect x="10" y="94" width="80" height="6" fill="#3b1d6e"/><path d="M8 100 Q8 80 26 74 L30 86 L20 100Z M92 100 Q92 80 74 74 L70 86 L80 100Z" fill="#f3efe6"/>',
+   armure:B+'#1d3fa8"/><path d="M30 72 Q50 66 70 72 L72 94 Q50 100 28 94Z" fill="#f3efe6"/><path d="M8 100 Q10 80 28 74 L32 88 L18 100Z M92 100 Q90 80 72 74 L68 88 L82 100Z" fill="#ffd23f"/>'
+  })[k]||outfitSVG("neutre");
+}
+function avatar(f,size,cfg){
+  const c={...DEF,...(cfg||{})},base=!!f.b;
+  const st=base?c.style:f.m,hair=base?c.hair:f.h,eye=base?c.eyes:f.e,sk=c.skin,dk=shade(sk,.88),o=[];
   if(f.a)o.push(`<circle cx="50" cy="50" r="48" fill="${f.a}" opacity=".28"/>`);
-  if(f.m==="spiky3")o.push(`<path d="M30 30 L20 80 L37 58Z M70 30 L80 80 L63 58Z" fill="${f.h}"/>`);
-  o.push('<path d="M10 100 Q14 72 50 68 Q86 72 90 100Z" fill="#ff7a1a"/><path d="M39 69 L50 91 L61 69 Q50 65 39 69Z" fill="#1f4fd8"/><rect x="10" y="94" width="80" height="6" fill="#1f4fd8"/><rect x="43" y="56" width="14" height="16" rx="4" fill="#9a6641"/><circle cx="31" cy="46" r="4" fill="#a56d47"/><circle cx="69" cy="46" r="4" fill="#a56d47"/><ellipse cx="50" cy="44" rx="19" ry="22" fill="#b57b52"/>');
-  if(f.m==="curly"){
-    o.push(`<path d="M31 42 Q29 22 50 20 Q71 22 69 42 Q60 31 50 31 Q40 31 31 42Z" fill="${f.h}"/>`);
-    [[33,27],[42,20],[52,18],[61,21],[68,28],[30,37],[70,37]].forEach(([x,y])=>o.push(`<circle cx="${x}" cy="${y}" r="7" fill="${f.h}"/>`));
-  }else o.push(`<path d="${f.m==="spiky"?"M31 40 L24 20 L37 28 L38 8 L48 25 L56 6 L61 26 L74 12 L70 30 L69 40 Q50 27 31 40Z":"M31 40 L18 16 L36 26 L34 3 L48 22 L58 2 L62 24 L80 10 L70 32 L69 40 Q50 27 31 40Z"}" fill="${f.h}"/>`);
-  o.push(`<path d="M38 41 L46 42 M54 42 L62 41" stroke="${f.m==="curly"?"#141414":f.h}" stroke-width="2" stroke-linecap="round"/><ellipse cx="42.5" cy="47" rx="2.6" ry="3" fill="${f.e}"/><ellipse cx="57.5" cy="47" rx="2.6" ry="3" fill="${f.e}"/><path d="M44 55 Q50 59 56 55" stroke="#5a2f1c" stroke-width="2" fill="none" stroke-linecap="round"/>`);
+  o.push(hairBack(st,hair),outfitSVG(c.outfit));
+  o.push(`<rect x="43" y="56" width="14" height="16" rx="4" fill="${dk}"/><circle cx="31" cy="46" r="4" fill="${dk}"/><circle cx="69" cy="46" r="4" fill="${dk}"/><ellipse cx="50" cy="44" rx="19" ry="22" fill="${sk}"/>`);
+  o.push(hairFront(st,hair));
+  o.push(`<path d="M38 41 L46 42 M54 42 L62 41" stroke="${hair}" stroke-width="2" stroke-linecap="round"/><ellipse cx="42.5" cy="47" rx="2.6" ry="3" fill="${eye}"/><ellipse cx="57.5" cy="47" rx="2.6" ry="3" fill="${eye}"/><path d="M44 55 Q50 59 56 55" stroke="${shade(sk,.45)}" stroke-width="2" fill="none" stroke-linecap="round"/>`);
   return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" role="img" aria-label="Avatar ${f.n}" style="display:block">${o.join("")}</svg>`;
 }
 const $=id=>document.getElementById(id);
@@ -249,7 +284,7 @@ function scoreMetric(m,raw,p){
   if(m.ratio){if(!p.poids)return null;v=v/p.poids}
   if(m.max)v=v/m.max*100;
   if(m.rel){if(!p[m.rel])return null;v=v/p[m.rel]}
-  return Math.round(interp(T[m.t],v));
+  return Math.round(interp(tableOf(m,p),v));
 }
 function avg(a){a=a.filter(x=>x!=null);return a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):null}
 const today=()=>new Date().toLocaleDateString("en-CA");
@@ -263,6 +298,25 @@ let current=null,view=null;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(current))}catch(_){}}
 function addEntry(p,id,v,d){const h=hist(p,id),i=h.findIndex(e=>e.d===d);if(i>=0)h.splice(i,1);h.push({d,v:String(v)});h.sort((a,b)=>a.d<b.d?-1:1)}
 
+function tableOf(m,p){return m.t==="imc"&&p&&p.sexe==="F"?T.imcF:T[m.t]}
+function need(m,tgt,cur,p){
+  const tb=tableOf(m,p).slice().sort((a,b)=>a[0]-b[0]),xs=[];
+  for(let i=0;i<tb.length-1;i++){const[a,sa]=tb[i],[b,sb]=tb[i+1];
+    if(Math.min(sa,sb)<=tgt&&tgt<=Math.max(sa,sb))xs.push(sa===sb?a:a+(tgt-sa)*(b-a)/(sb-sa));}
+  return xs.length?xs.reduce((u,v)=>Math.abs(v-cur)<Math.abs(u-cur)?v:u):null;
+}
+function goal(i){
+  if(i.s==null)return"";
+  const k=formIdx(i.s);if(k>=7)return"Forme maximale atteinte";
+  const nf=FORMS[k+1],m=i.m;let cur=parseVal(m,i.raw);
+  if(cur==null)return"";
+  if(m.rel)cur/=current[m.rel];
+  let x=need(m,nf.min,cur,current);if(x==null)return"";
+  const up=x>cur;if(m.rel)x*=current[m.rel];
+  const rd=(v,f)=>up?Math.ceil(v*f-1e-9)/f:Math.floor(v*f+1e-9)/f;
+  if(m.time){const sec=Math.round(rd(x,60)*60);return`${nf.n} : ${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`}
+  return`${nf.n} : ${rd(x,10**(m.dec||0)).toFixed(m.dec||0).replace(".",",")} ${m.unit}`;
+}
 function syncImc(p){
   if(!p.taille||!p.poids)return;
   const v=(p.poids/((p.taille/100)**2)).toFixed(1),l=lastOf(hist(p,"imc"));
@@ -295,6 +349,7 @@ function buildForm(p){
   h+=`<h2>Toi</h2>
   <label>Prénom<input name="prenom" required value="${p?p.prenom:""}" autocomplete="given-name"></label>
   <label>Date de naissance<input name="naissance" type="date" required value="${p?p.naissance:""}"></label>
+  <label>Sexe <small>(pour ajuster l'IMC)</small><select name="sexe" required><option value="">Choisir…</option><option value="H"${p&&p.sexe==="H"?" selected":""}>Homme</option><option value="F"${p&&p.sexe==="F"?" selected":""}>Femme</option></select></label>
   <label>Taille <small>(cm)</small><input name="taille" type="number" inputmode="decimal" required value="${p?p.taille:""}"></label>
   <label>Poids <small>(kg)</small><input name="poids" type="number" inputmode="decimal" required value="${p?p.poids:""}"></label>`;
   for(const g in GROUPS){
@@ -316,10 +371,10 @@ function buildForm(p){
 $("form").addEventListener("submit",e=>{
   e.preventDefault();
   const fd=new FormData(e.target),g=k=>fd.get(k);
-  if(!g("prenom").trim()||!g("naissance")||!+g("taille")||!+g("poids")){
-    alert("Renseigne le prénom, la date de naissance, la taille et le poids.");return;}
+  if(!g("prenom").trim()||!g("naissance")||!g("sexe")||!+g("taille")||!+g("poids")){
+    alert("Renseigne le prénom, la date de naissance, le sexe, la taille et le poids.");return;}
   const p=current||{data:{}};
-  Object.assign(p,{prenom:g("prenom").trim(),naissance:g("naissance"),taille:+g("taille"),poids:+g("poids")});
+  Object.assign(p,{prenom:g("prenom").trim(),naissance:g("naissance"),sexe:g("sexe"),taille:+g("taille"),poids:+g("poids")});
   for(const gr in GROUPS)for(const st of GROUPS[gr].stats)for(const m of st.m){
     if(m.test||m.auto)continue;
     const v=g(m.id).trim();if(v==="")continue;
@@ -341,7 +396,7 @@ function render(p){
   $("name").textContent=p.prenom;
   const age=Math.floor((Date.now()-new Date(p.naissance))/31557600000);
   $("meta").textContent=`GUERRIER · ${age} ANS · ${p.taille} CM · ${p.poids} KG`;
-  $("avf").innerHTML=avatar(f,184);$("fn").textContent=f.n.toUpperCase();
+  $("avf").innerHTML=avatar(f,184,p.avatar);$("avh").hidden=!!p.avatar;$("fn").textContent=f.n.toUpperCase();
   $("pw").textContent=pw(sc);
   $("pfill").style.width=(nx?Math.max(0,Math.min(100,(sc-f.min)/(nx.min-f.min)*100)):100)+"%";
   $("ptxt").textContent=nx?`Encore ${pw(nx.min-sc)} avant ${nx.n}`:"Tu as atteint la forme ultime";
@@ -350,15 +405,29 @@ function render(p){
   document.querySelectorAll(".zst").forEach(b=>b.onclick=()=>openStat("physique",b.dataset.k));
   show("home");
 }
+function openAvatar(){
+  const c={...DEF,...(current.avatar||{})};
+  const sw=(arr,k,lab)=>`<div class="row"><div class="top"><span>${lab}</span></div><div class="opts">`+arr.map(v=>`<button class="sw${c[k]===v?" on":""}" data-k="${k}" data-v="${v}" style="background:${v}" aria-label="${v}"></button>`).join("")+`</div></div>`;
+  const ch=(obj,k,lab)=>`<div class="row"><div class="top"><span>${lab}</span></div><div class="opts">`+Object.entries(obj).map(([v,l])=>`<button class="chip${c[k]===v?" on":""}" data-k="${k}" data-v="${v}">${l}</button>`).join("")+`</div></div>`;
+  const keep=$("sheet").scrollTop;
+  $("sheet").innerHTML=`<h2>Ton avatar</h2><div style="display:flex;justify-content:center;margin:10px 0 4px"><div class="zav2" style="width:120px;height:120px;border-color:#8b919c">${avatar(FORMS[0],116,c)}</div></div>
+  <p class="hint" style="text-align:center">Tu modifies ta forme de base. Les transformations gardent leurs propres cheveux et leurs propres yeux.</p>`
+  +ch(STYLES,"style","Coiffure")+sw(HC,"hair","Cheveux et sourcils")+sw(SK,"skin","Peau")+sw(EC,"eyes","Yeux")+ch(OUTFITS,"outfit","Tenue")
+  +`<button class="btn2 close" id="closeSheet">Terminé</button>`;
+  $("sheetBg").classList.add("on");$("sheet").scrollTop=keep;
+  $("closeSheet").onclick=closeSheet;
+  document.querySelectorAll("#sheet [data-k]").forEach(b=>b.onclick=()=>{current.avatar={...c,[b.dataset.k]:b.dataset.v};save();render(current);openAvatar()});
+}
 function renderRank(){
   const i=formIdx(compute(current).total??0);
   $("rlist").innerHTML=FORMS.map((f,j)=>j).reverse().map(j=>{const f=FORMS[j],st=j>i?0:j===i?1:2;
     const rg=`${pw(f.min)} – ${j<7?pw(FORMS[j+1].min-1):"10 000"}`;
-    return`<div class="zrow${st===1?" cur":""}"><div class="zav2" style="border-color:${f.c}">${avatar(f,42)}</div><div style="flex:1"><div class="zn" style="color:${st?"var(--txt)":"var(--mut)"}">${f.n}</div><small style="color:var(--mut)">Puissance ${rg}</small></div><span class="zs" style="color:${["#9aa1ad","#ffb21a","#4cd27a"][st]}">${["VERROUILLÉE","ACTUELLE","DÉBLOQUÉE"][st]}</span></div>`}).join("");
+    return`<div class="zrow${st===1?" cur":""}"><div class="zav2" style="border-color:${f.c}">${avatar(f,42,current.avatar)}</div><div style="flex:1"><div class="zn" style="color:${st?"var(--txt)":"var(--mut)"}">${f.n}</div><small style="color:var(--mut)">Puissance ${rg}</small></div><span class="zs" style="color:${["#9aa1ad","#ffb21a","#4cd27a"][st]}">${["VERROUILLÉE","ACTUELLE","DÉBLOQUÉE"][st]}</span></div>`}).join("");
 }
 function show(w){$("home").hidden=w!=="home";$("setup").hidden=w!=="setup";$("rank").hidden=w!=="rank"}
 $("rankBtn").onclick=()=>{renderRank();show("rank");scrollTo(0,0)};
 $("rankBack").onclick=()=>show("home");
+$("avf").onclick=openAvatar;
 const closeSheet=()=>$("sheetBg").classList.remove("on");
 $("sheetBg").onclick=e=>{if(e.target.id==="sheetBg")closeSheet()};
 $("editBtn").onclick=()=>{buildForm(current);show("setup");scrollTo(0,0)};
@@ -379,7 +448,7 @@ function openStat(g,k){
     const shown=i.raw!==""?`${i.raw} ${i.m.unit}`:"non renseigné";
     h+=`<div class="row go-m" data-m="${i.m.id}" role="button"><div class="top"><span>${i.m.label}</span><b>${pw(i.s)}</b></div>
     <small>${shown}${i.s!=null?" · "+rank(i.s):""}</small> ${delta(i.s0,i.s)}
-    ${barHTML(i.s0,i.s,col)}<small>Historique et nouvelle mesure ›</small></div>`;
+    ${barHTML(i.s0,i.s,col)}<small class="gl">${goal(i)?"→ "+goal(i):"Ajouter une mesure"} ›</small></div>`;
   }
   h+=`<button class="btn2 close" id="closeSheet">Fermer</button>`;
   $("sheet").innerHTML=h;$("sheetBg").classList.add("on");
@@ -403,7 +472,7 @@ function openMetric(g,k,id){
   view={g,k,id};const s=ST(g,k),i=s.items.find(x=>x.m.id===id),m=i.m,col=colOf(g);
   let h=`<button class="back" id="back">‹ ${s.st.label}</button><h2>${m.label}</h2>
   <small style="color:var(--mut)">${i.s==null?"Aucune mesure":`Dernière : ${i.raw} ${m.unit} · ${pw(i.s)} · ${rank(i.s)}`}</small> ${delta(i.s0,i.s)}
-  ${chart(i,col)}`;
+  ${goal(i)?`<div class="gl" style="margin-top:8px;font-size:15px">→ ${goal(i)}</div>`:""}${chart(i,col)}`;
   h+=m.link?`<p class="hint">Fais le test sur <a href="https://www.jetpunk.com" target="_blank" rel="noopener" style="color:var(--men)">jetpunk.com</a>, puis entre ton résultat ci-dessous.</p>`:"";
   h+=m.auto?`<p class="hint" style="margin-top:12px">Calculé automatiquement avec ta taille et ton poids. Mets-les à jour avec « Modifier » sur l'accueil.</p>`:m.test?`<button class="go" id="runTest" style="margin-top:12px">Faire le test</button>`
    :`<div class="addrow"><input id="nv" inputmode="${m.time?"text":"decimal"}" placeholder="Nouvelle valeur (${m.unit})"><input id="nd" type="date" value="${today()}"></div><button class="go" id="addBtn" style="margin-top:12px">Ajouter cette mesure</button>`;
