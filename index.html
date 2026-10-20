@@ -117,6 +117,8 @@ button.go{margin-top:28px;width:100%;padding:16px;border:0;border-radius:14px;ba
 .zst .zk{width:92px}.zst .zb{flex:1;height:8px;border-radius:4px}
 .zv{width:70px;text-align:right}.zn2{display:block;font-size:21px;line-height:1}
 .zd{display:block;font-size:12px}.zd b{font-weight:600}
+.zst .zb{display:flex}
+.zd{font-size:13px}
 </style>
 </head>
 <body>
@@ -327,6 +329,12 @@ $("form").addEventListener("submit",e=>{
 });
 
 /* ===== Accueil ===== */
+function segs(s0,s,col){
+  if(s==null)return"";
+  if(s0==null||s0===s)return`<i style="width:${s}%;background:${col}"></i>`;
+  const lo=Math.min(s0,s),hi=Math.max(s0,s);
+  return`<i style="width:${lo}%;background:${col}"></i><i style="width:${hi-lo}%;background:${s>s0?"#4cd27a":"#ff5d5d"}"></i>`;
+}
 function render(p){
   current=p;const r=compute(p),sc=r.total??0,i=formIdx(sc),f=FORMS[i],nx=FORMS[i+1];
   $("home").style.setProperty("--fc",f.c);
@@ -338,7 +346,7 @@ function render(p){
   $("pfill").style.width=(nx?Math.max(0,Math.min(100,(sc-f.min)/(nx.min-f.min)*100)):100)+"%";
   $("ptxt").textContent=nx?`Encore ${pw(nx.min-sc)} avant ${nx.n}`:"Tu as atteint la forme ultime";
   $("cards").innerHTML=r.physique.stats.map(s=>{const fo=formOf(s.score);
-    return`<button class="zst" data-k="${s.st.k}"><span class="zk">${s.st.label.toUpperCase()}</span><span class="zb"><i style="width:${s.score||0}%;background:${fo.c}"></i></span><span class="zv"><b class="zn2">${pw(s.score)}</b><span class="zd">${delta(s.score0,s.score)}</span></span></button>`}).join("");
+    return`<button class="zst" data-k="${s.st.k}"><span class="zk">${s.st.label.toUpperCase()}</span><span class="zb">${segs(s.score0,s.score,fo.c)}</span><span class="zv"><b class="zn2">${pw(s.score)}</b><span class="zd">${delta(s.score0,s.score)}</span></span></button>`}).join("");
   document.querySelectorAll(".zst").forEach(b=>b.onclick=()=>openStat("physique",b.dataset.k));
   show("home");
 }
