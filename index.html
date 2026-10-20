@@ -129,6 +129,7 @@ select{width:100%;margin-top:5px;padding:13px;border-radius:12px;border:1px soli
 .sw.on{border-color:#ffb21a;box-shadow:0 0 0 2px #ffb21a55}
 .chip{padding:9px 14px;border-radius:20px;border:1px solid var(--line);background:none;color:var(--txt);font:inherit;font-size:15px}
 .chip.on{border-color:#ffb21a;color:#ffb21a;background:#231d0c}
+button.zbig{display:block;width:100%;background:none;border:0;padding:0;font-family:inherit;cursor:pointer}
 </style>
 </head>
 <body>
@@ -142,10 +143,20 @@ select{width:100%;margin-top:5px;padding:13px;border-radius:12px;border:1px soli
     <button class="zav" id="avf" aria-label="Personnaliser l'avatar"></button>
     <div class="zhint" id="avh">Touche l'avatar pour le personnaliser</div>
     <div class="zfn" id="fn"></div>
-    <div class="zl2">NIVEAU DE PUISSANCE</div>
-    <div class="zbig" id="pw"></div>
+    <div class="zl2">NIVEAU DE PUISSANCE ›</div>
+    <button class="zbig" id="pw" aria-label="Voir l'analyse détaillée"></button>
     <div class="zprog"><div class="zbar"><i id="pfill"></i></div><div class="zpt" id="ptxt"></div></div>
     <div class="zlist" id="cards"></div>
+  </div>
+  <div id="radar" class="zhome" hidden>
+    <button class="back" id="radarBack">‹ Retour</button>
+    <div class="zhead"><h1>ANALYSE</h1><div class="sub">STATISTIQUES DE COMBAT</div></div>
+    <div class="zsc" style="margin-top:14px">
+      <div class="zt"><span>SCOUTER</span><span>ANALYSE ●</span></div>
+      <div id="rchart"></div>
+      <div class="zl">NIVEAU DE PUISSANCE</div>
+      <div class="zbig" id="rpw" style="font-size:52px"></div>
+    </div>
   </div>
   <div id="rank" class="zhome" hidden>
     <button class="back" id="rankBack">‹ Retour</button>
@@ -187,8 +198,6 @@ const T={
  imcF:[[13,0],[15,10],[17,45],[19,80],[21,100],[23,100],[25,75],[27,50],[30,25],[34,8],[39,0]],
  bras:[[25,0],[30,10],[34,25],[38,45],[42,65],[46,85],[50,100]],
  pec:[[80,0],[90,10],[100,28],[108,48],[116,68],[124,88],[132,100]],
- cuisse:[[45,0],[50,10],[56,28],[62,48],[68,68],[74,88],[80,100]],
- waist:[[.35,40],[.40,85],[.43,100],[.46,90],[.50,60],[.55,30],[.60,10],[.70,0]],
  memo:[[27,100],[33,90],[40,75],[48,55],[60,35],[80,10]],
  geo:[[0,0],[25,30],[50,60],[75,85],[100,100]]
 };
@@ -212,9 +221,7 @@ const GROUPS={
   {k:"physique",label:"Physique",m:[
    {id:"imc",label:"Rapport taille / poids (IMC)",unit:"kg/m²",t:"imc",dec:1,auto:1},
    {id:"bras",label:"Tour de bras (contracté)",unit:"cm",t:"bras"},
-   {id:"pec",label:"Tour de pec",unit:"cm",t:"pec"},
-   {id:"tour_taille",label:"Tour de taille",unit:"cm",t:"waist",rel:"taille"},
-   {id:"cuisse",label:"Tour de cuisse",unit:"cm",t:"cuisse"}]}]}
+   {id:"pec",label:"Tour de pec",unit:"cm",t:"pec"}]}]}
 };
 const FORMS=[
  {n:"Forme de base",min:0,c:"#8b919c",b:1,a:null},
@@ -356,7 +363,7 @@ function buildForm(p){
     h+=`<h2>${GROUPS[g].label}</h2>`;
     for(const st of GROUPS[g].stats){
       h+=`<h3>${st.label}</h3>`;
-      if(st.k==="physique")h+=`<p class="hint">Mesure-toi avec un mètre ruban : bras contracté, pec au repos, taille au nombril, cuisse à mi-hauteur. Le rapport taille / poids est calculé avec ta taille et ton poids.</p>`;
+      if(st.k==="physique")h+=`<p class="hint">Mesure-toi avec un mètre ruban : bras contracté et pec au repos. Le rapport taille / poids est calculé avec ta taille et ton poids.</p>`;
       for(const m of st.m){
         if(m.auto)continue;if(m.test){h+=`<p class="hint">${m.label} : à faire dans l'app, depuis la fiche ${st.label}.</p>`;continue}
         h+=`<label>${m.label} <small>${m.unit?"("+m.unit+")":""}</small><input name="${m.id}" inputmode="${m.time?"text":"decimal"}" placeholder="${m.ph||""}" value="${val(m.id)}"></label>`;
@@ -418,16 +425,33 @@ function openAvatar(){
   $("closeSheet").onclick=closeSheet;
   document.querySelectorAll("#sheet [data-k]").forEach(b=>b.onclick=()=>{current.avatar={...c,[b.dataset.k]:b.dataset.v};save();render(current);openAvatar()});
 }
+function renderRadar(){
+  const st=compute(current).physique.stats,n=st.length,cx=180,cy=158,R=84,L=98;
+  const ang=i=>(-90+i*360/n)*Math.PI/180,pt=(i,k)=>[cx+R*k*Math.cos(ang(i)),cy+R*k*Math.sin(ang(i))];
+  const f=v=>v.toFixed(1),line=a=>a.map(p=>p.map(f).join(",")).join(" ");
+  let o=[.2,.4,.6,.8,1].map(k=>`<polygon points="${line(st.map((_,i)=>pt(i,k)))}" fill="${k===1?"#5dff9d0d":"none"}" stroke="#5dff9d${k===1?"88":"33"}" stroke-width="${k===1?1.5:1}"/>`).join("");
+  o+=st.map((_,i)=>{const[x,y]=pt(i,1);return`<line x1="${cx}" y1="${cy}" x2="${f(x)}" y2="${f(y)}" stroke="#5dff9d33"/>`}).join("");
+  const vals=st.map((s,i)=>pt(i,Math.max(0,s.score||0)/100));
+  o+=`<polygon points="${line(vals)}" fill="#5dff9d40" stroke="#5dff9d" stroke-width="2.5" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px #5dff9d)"/>`;
+  o+=vals.map(([x,y])=>`<circle cx="${f(x)}" cy="${f(y)}" r="4" fill="#5dff9d"/>`).join("");
+  st.forEach((s,i)=>{const c=Math.cos(ang(i)),sn=Math.sin(ang(i)),x=cx+L*c,y=cy+L*sn,
+    a=c>.3?"start":c<-.3?"end":"middle",[ny,vy]=sn<-.5?[y-20,y+2]:sn>.5?[y+8,y+30]:[y-4,y+18];
+    o+=`<text x="${f(x)}" y="${f(ny)}" text-anchor="${a}" font-size="13" letter-spacing="1.5" fill="#9fe8bf">${s.st.label.toUpperCase()}</text><text x="${f(x)}" y="${f(vy)}" text-anchor="${a}" font-size="23" font-weight="700" fill="#5dff9d">${pw(s.score)}</text>`});
+  $("rchart").innerHTML=`<svg viewBox="0 0 360 300" width="100%" role="img" aria-label="Graphique des statistiques">${o}</svg>`;
+  $("rpw").textContent=pw(compute(current).total??0);
+}
 function renderRank(){
   const i=formIdx(compute(current).total??0);
   $("rlist").innerHTML=FORMS.map((f,j)=>j).reverse().map(j=>{const f=FORMS[j],st=j>i?0:j===i?1:2;
     const rg=`${pw(f.min)} – ${j<7?pw(FORMS[j+1].min-1):"10 000"}`;
     return`<div class="zrow${st===1?" cur":""}"><div class="zav2" style="border-color:${f.c}">${avatar(f,42,current.avatar)}</div><div style="flex:1"><div class="zn" style="color:${st?"var(--txt)":"var(--mut)"}">${f.n}</div><small style="color:var(--mut)">Puissance ${rg}</small></div><span class="zs" style="color:${["#9aa1ad","#ffb21a","#4cd27a"][st]}">${["VERROUILLÉE","ACTUELLE","DÉBLOQUÉE"][st]}</span></div>`}).join("");
 }
-function show(w){$("home").hidden=w!=="home";$("setup").hidden=w!=="setup";$("rank").hidden=w!=="rank"}
+function show(w){$("home").hidden=w!=="home";$("setup").hidden=w!=="setup";$("rank").hidden=w!=="rank";$("radar").hidden=w!=="radar"}
 $("rankBtn").onclick=()=>{renderRank();show("rank");scrollTo(0,0)};
 $("rankBack").onclick=()=>show("home");
 $("avf").onclick=openAvatar;
+$("pw").onclick=()=>{renderRadar();show("radar");scrollTo(0,0)};
+$("radarBack").onclick=()=>show("home");
 const closeSheet=()=>$("sheetBg").classList.remove("on");
 $("sheetBg").onclick=e=>{if(e.target.id==="sheetBg")closeSheet()};
 $("editBtn").onclick=()=>{buildForm(current);show("setup");scrollTo(0,0)};
