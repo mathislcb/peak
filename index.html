@@ -130,6 +130,29 @@ select{width:100%;margin-top:5px;padding:13px;border-radius:12px;border:1px soli
 .chip{padding:9px 14px;border-radius:20px;border:1px solid var(--line);background:none;color:var(--txt);font:inherit;font-size:15px}
 .chip.on{border-color:#ffb21a;color:#ffb21a;background:#231d0c}
 button.zbig{display:block;width:100%;background:none;border:0;padding:0;font-family:inherit;cursor:pointer}
+.tf{position:relative;display:flex;flex-direction:column;align-items:center;animation:quake .09s 10}
+.tfbg{position:fixed;inset:0;background:radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--tc) 38%,#0b0d12),#0b0d12 70%);opacity:0;animation:tfin 1s 1.1s forwards;pointer-events:none}
+.tfflash{position:fixed;inset:0;background:#fff;opacity:0;animation:flash .6s 1s ease-out;pointer-events:none;z-index:2}
+.tfstage{position:relative;width:260px;height:260px;display:flex;align-items:center;justify-content:center}
+.tfrays{position:absolute;inset:-70px;border-radius:50%;background:repeating-conic-gradient(var(--tc) 0 4deg,transparent 4deg 12deg);-webkit-mask-image:radial-gradient(circle,#000 22%,transparent 66%);mask-image:radial-gradient(circle,#000 22%,transparent 66%);opacity:0;animation:tfin .6s 1.1s forwards,spin 9s linear infinite}
+.tfring{position:absolute;width:220px;height:220px;border:3px solid var(--tc);border-radius:50%;opacity:0}
+.tfring.a{animation:gather 1s ease-in both,shock 1s 1.1s ease-out forwards}
+.tfring.b{animation:gather 1s .35s ease-in both,shock 1.2s 1.3s ease-out forwards}
+.tfav{position:relative;width:200px;height:200px;border-radius:50%;overflow:hidden;border:3px solid var(--tc);background:#11141b;box-shadow:0 0 40px color-mix(in srgb,var(--tc) 60%,transparent);animation:chargeav 1.1s ease-in both,popav .5s 1.1s ease-out both}
+.tft1{position:relative;font-size:13px;letter-spacing:8px;color:var(--tc);margin-top:10px;opacity:0;animation:rise .5s 1.4s both}
+.tfname{position:relative;font-size:38px;font-weight:700;line-height:1.05;letter-spacing:2px;color:var(--tc);text-shadow:0 0 24px var(--tc);margin-top:6px;text-align:center;opacity:0;animation:rise .6s 1.55s both}
+.tfpw{position:relative;font-size:30px;font-weight:700;color:#5dff9d;text-shadow:0 0 16px #5dff9d99;margin-top:8px;opacity:0;animation:rise .6s 2s both}
+.tfok{opacity:0;animation:rise .4s 2.5s both}
+@keyframes quake{0%,100%{left:0;top:0}25%{left:-3px;top:2px}50%{left:3px;top:-2px}75%{left:-2px;top:-2px}}
+@keyframes tfin{to{opacity:1}}
+@keyframes flash{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes gather{0%{transform:scale(2.4);opacity:0}60%{opacity:.9}100%{transform:scale(1);opacity:.9}}
+@keyframes shock{0%{transform:scale(1);opacity:.9}100%{transform:scale(3);opacity:0}}
+@keyframes chargeav{0%{transform:scale(.96)}100%{transform:scale(1.04)}}
+@keyframes popav{0%{transform:scale(1.04)}50%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.85)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.tf,.tf *,.tfok{animation:none!important}.tfbg,.tfrays,.tft1,.tfname,.tfpw,.tfok{opacity:1!important}.tfring,.tfflash{display:none}}
 </style>
 </head>
 <body>
@@ -156,6 +179,8 @@ button.zbig{display:block;width:100%;background:none;border:0;padding:0;font-fam
       <div id="rchart"></div>
       <div class="zl">NIVEAU DE PUISSANCE</div>
       <div class="zbig" id="rpw" style="font-size:52px"></div>
+      <div class="zl" style="margin-top:14px;padding-top:12px;border-top:1px solid #5dff9d44">ÉVOLUTION</div>
+      <div id="pcurve"></div>
     </div>
   </div>
   <div id="rank" class="zhome" hidden>
@@ -194,8 +219,8 @@ const T={
  study:[[0,5],[3,25],[7,50],[14,75],[25,95],[35,100]],
  avg:[[5,10],[10,40],[14,70],[17,90],[20,100]],
  pct:[[0,0],[100,100]],
+ gain:[[0,0],[0.5,10],[1,25],[2,45],[3,62],[4,78],[5,90],[7,100]],
  imc:[[14,0],[16,10],[18,45],[20,80],[22,100],[24,100],[26,75],[28,50],[31,25],[35,8],[40,0]],
- imcF:[[13,0],[15,10],[17,45],[19,80],[21,100],[23,100],[25,75],[27,50],[30,25],[34,8],[39,0]],
  bras:[[25,0],[30,10],[34,25],[38,45],[42,65],[46,85],[50,100]],
  pec:[[80,0],[90,10],[100,28],[108,48],[116,68],[124,88],[132,100]],
  memo:[[27,100],[33,90],[40,75],[48,55],[60,35],[80,10]],
@@ -205,23 +230,24 @@ const T={
 const GROUPS={
  physique:{label:"Mesures et performances",stats:[
   {k:"force",label:"Force",m:[
-   {id:"squat",label:"Squat (1 répétition max)",unit:"kg",t:"squat"},
-   {id:"tractions",label:"Tractions (max d'affilée)",unit:"reps",t:"pull"},
-   {id:"pompes",label:"Pompes (max d'affilée)",unit:"reps",t:"push"},
-   {id:"bench",label:"Développé couché (1 RM)",unit:"kg",t:"bench"}]},
+   {id:"squat",label:"Squat (1 répétition max)",unit:"kg",t:"squat",lim:[20,400]},
+   {id:"tractions",label:"Tractions (max d'affilée)",unit:"reps",t:"pull",lim:[0,80]},
+   {id:"pompes",label:"Pompes (max d'affilée)",unit:"reps",t:"push",lim:[0,250]},
+   {id:"bench",label:"Développé couché (1 RM)",unit:"kg",t:"bench",lim:[10,300]}]},
   {k:"vitesse",label:"Vitesse",m:[
-   {id:"t100",label:"100 m",unit:"secondes",t:"m100",dec:1,ph:"13.2"},
-   {id:"t400",label:"400 m",unit:"secondes",t:"m400",ph:"62"}]},
+   {id:"t100",label:"100 m",unit:"secondes",t:"m100",dec:1,ph:"13.2",lim:[8,30]},
+   {id:"t400",label:"400 m",unit:"secondes",t:"m400",ph:"62",lim:[40,200]}]},
   {k:"endurance",label:"Endurance",m:[
-   {id:"t5k",label:"5 km",unit:"mm:ss",t:"k5",time:1,ph:"25:30"},
-   {id:"t10k",label:"10 km",unit:"mm:ss",t:"k10",time:1,ph:"55:00"}]},
+   {id:"t5k",label:"5 km",unit:"mm:ss",t:"k5",time:1,ph:"25:30",lim:[12,60]},
+   {id:"t10k",label:"10 km",unit:"mm:ss",t:"k10",time:1,ph:"55:00",lim:[25,120]},
+   {id:"gainage",label:"Gainage (planche)",unit:"mm:ss",t:"gain",time:1,ph:"1:30",lim:[0.1,30]}]},
   {k:"agilite",label:"Agilité",m:[
-   {id:"vert",label:"Détente sèche verticale",unit:"cm",t:"vert"},
-   {id:"horiz",label:"Détente sèche horizontale",unit:"cm",t:"horiz"}]},
+   {id:"vert",label:"Détente sèche verticale",unit:"cm",t:"vert",lim:[5,120]},
+   {id:"horiz",label:"Détente sèche horizontale",unit:"cm",t:"horiz",lim:[50,400]}]},
   {k:"physique",label:"Physique",m:[
    {id:"imc",label:"Rapport taille / poids (IMC)",unit:"kg/m²",t:"imc",dec:1,auto:1},
-   {id:"bras",label:"Tour de bras (contracté)",unit:"cm",t:"bras"},
-   {id:"pec",label:"Tour de pec",unit:"cm",t:"pec"}]}]}
+   {id:"bras",label:"Tour de bras (contracté)",unit:"cm",t:"bras",lim:[15,70]},
+   {id:"pec",label:"Tour de pec",unit:"cm",t:"pec",lim:[60,180]}]}]}
 };
 const FORMS=[
  {n:"Forme de base",min:0,c:"#8b919c",b:1,a:null},
@@ -236,22 +262,32 @@ const formIdx=s=>s==null?0:FORMS.reduce((k,f,i)=>s>=f.min?i:k,0);
 const formOf=s=>FORMS[formIdx(s)];
 const rank=s=>s==null?"–":formOf(s).n;
 const pw=s=>s==null?"–":(s*100).toLocaleString("fr-FR");
-const DEF={style:"short",hair:"#4a2f1d",skin:"#eab98f",eyes:"#5a3a1e",outfit:"neutre"};
+const DEF={style:"short",hair:"#4a2f1d",skin:"#eab98f",eyes:"#5a3a1e",outfit:"neutre",beard:"none"};
 const SK=["#f6d7bd","#eab98f","#c8946a","#a9724b","#7c4a2d","#4b2b1b"];
 const HC=["#141414","#4a2f1d","#8a5a2b","#b5532a","#c9a24a","#9aa1ad","#f0f0f0","#2a4a9a"];
 const EC=["#2b2b2b","#5a3a1e","#2f7d4f","#3d78d8","#7a8a99","#20a8a0"];
 const STYLES={buzz:"Rasé",short:"Court",curly:"Bouclé",spiky:"Piquant",long:"Long"};
+const BEARDS={none:"Aucune",mous:"Moustache",bouc:"Bouc",boucmous:"Bouc + moustache",fullsans:"Grosse barbe sans moustache",full:"Grosse barbe"};
 const OUTFITS={neutre:"Neutre",gi:"Kimono orange",violet:"Tenue violette",armure:"Armure saiyan"};
 function shade(c,k){const n=parseInt(c.slice(1),16);return"#"+[n>>16,(n>>8)&255,n&255].map(x=>Math.max(0,Math.min(255,Math.round(x*k))).toString(16).padStart(2,"0")).join("")}
 function hairBack(st,c){return({long:`<path d="M30 40 L24 76 L38 62Z M70 40 L76 76 L62 62Z" fill="${c}"/>`,ss3:`<path d="M30 30 L20 80 L37 58Z M70 30 L80 80 L63 58Z" fill="${c}"/>`})[st]||""}
-function hairFront(st,c){return({
- buzz:`<path d="M32 38 Q32 24 50 23 Q68 24 68 38 Q60 32 50 32 Q40 32 32 38Z" fill="${c}"/>`,
- short:`<path d="M30 42 Q28 20 50 19 Q72 20 70 42 Q64 30 50 29 Q36 30 30 42Z" fill="${c}"/>`,
- curly:`<path d="M31 42 Q29 22 50 20 Q71 22 69 42 Q60 31 50 31 Q40 31 31 42Z" fill="${c}"/>`+[[33,27],[42,20],[52,18],[61,21],[68,28],[30,37],[70,37]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="7" fill="${c}"/>`).join(""),
- spiky:`<path d="M31 40 L27 26 L37 31 L40 17 L48 29 L55 15 L60 30 L70 22 L69 40 Q50 28 31 40Z" fill="${c}"/>`,
- long:`<path d="M30 42 Q26 20 50 18 Q74 20 70 42 Q64 30 50 29 Q36 30 30 42Z" fill="${c}"/>`,
- ss:`<path d="M31 40 L24 20 L37 28 L38 8 L48 25 L56 6 L61 26 L74 12 L70 30 L69 40 Q50 27 31 40Z" fill="${c}"/>`,
- ss3:`<path d="M31 40 L18 16 L36 26 L34 3 L48 22 L58 2 L62 24 L80 10 L70 32 L69 40 Q50 27 31 40Z" fill="${c}"/>`})[st]||""}
+function hairFront(st,c){
+  const cap=`<path d="M30 42 Q28 20 50 19 Q72 20 70 42 Q64 30 50 29 Q36 30 30 42Z" fill="${c}"/>`;
+  return({
+   buzz:"",
+   short:cap,
+   curly:`<path d="M31 42 Q29 22 50 20 Q71 22 69 42 Q60 31 50 31 Q40 31 31 42Z" fill="${c}"/>`+[[33,27],[42,20],[52,18],[61,21],[68,28],[30,37],[70,37]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="7" fill="${c}"/>`).join(""),
+   spiky:cap+`<path d="M31 40 L27 26 L37 31 L40 17 L48 29 L55 15 L60 30 L70 22 L69 40 Q50 28 31 40Z" fill="${c}"/>`,
+   long:cap,
+   ss:cap+`<path d="M31 40 L24 20 L37 28 L38 8 L48 25 L56 6 L61 26 L74 12 L70 30 L69 40 Q50 27 31 40Z" fill="${c}"/>`,
+   ss3:cap+`<path d="M31 40 L18 16 L36 26 L34 3 L48 22 L58 2 L62 24 L80 10 L70 32 L69 40 Q50 27 31 40Z" fill="${c}"/>`})[st]||"";
+}
+function beardSVG(k,c){
+  const M=`<path d="M41 52 Q45 49.5 50 51.5 Q55 49.5 59 52 Q55 55.5 50 53.5 Q45 55.5 41 52Z" fill="${c}"/>`,
+   G=`<path d="M44 60 Q50 58 56 60 Q56 69 50 70 Q44 69 44 60Z" fill="${c}"/>`,
+   F=`<path d="M31 47 Q31 70 50 73 Q69 70 69 47 Q66 61 57 62 Q50 60 43 62 Q34 61 31 47Z" fill="${c}"/>`;
+  return({mous:M,bouc:G,boucmous:G+M,fullsans:F,full:F+M})[k]||"";
+}
 function outfitSVG(k){
   const B='<path d="M10 100 Q14 72 50 68 Q86 72 90 100Z" fill="';
   return({
@@ -267,7 +303,7 @@ function avatar(f,size,cfg){
   if(f.a)o.push(`<circle cx="50" cy="50" r="48" fill="${f.a}" opacity=".28"/>`);
   o.push(hairBack(st,hair),outfitSVG(c.outfit));
   o.push(`<rect x="43" y="56" width="14" height="16" rx="4" fill="${dk}"/><circle cx="31" cy="46" r="4" fill="${dk}"/><circle cx="69" cy="46" r="4" fill="${dk}"/><ellipse cx="50" cy="44" rx="19" ry="22" fill="${sk}"/>`);
-  o.push(hairFront(st,hair));
+  o.push(beardSVG(c.beard,hair),hairFront(st,hair));
   o.push(`<path d="M38 41 L46 42 M54 42 L62 41" stroke="${hair}" stroke-width="2" stroke-linecap="round"/><ellipse cx="42.5" cy="47" rx="2.6" ry="3" fill="${eye}"/><ellipse cx="57.5" cy="47" rx="2.6" ry="3" fill="${eye}"/><path d="M44 55 Q50 59 56 55" stroke="${shade(sk,.45)}" stroke-width="2" fill="none" stroke-linecap="round"/>`);
   return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" role="img" aria-label="Avatar ${f.n}" style="display:block">${o.join("")}</svg>`;
 }
@@ -305,7 +341,25 @@ let current=null,view=null;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(current))}catch(_){}}
 function addEntry(p,id,v,d){const h=hist(p,id),i=h.findIndex(e=>e.d===d);if(i>=0)h.splice(i,1);h.push({d,v:String(v)});h.sort((a,b)=>a.d<b.d?-1:1)}
 
-function tableOf(m,p){return m.t==="imc"&&p&&p.sexe==="F"?T.imcF:T[m.t]}
+function ageOf(p){return Math.floor((Date.now()-new Date(p.naissance))/31557600000)}
+function imcShift(p){
+  const a=p&&p.naissance?ageOf(p):25;let d=p&&p.sexe==="F"?-1:0;
+  if(a<18)d-=(18-a)*.5;else if(a>=35)d+=Math.min(3,(a-35)/10);
+  return d;
+}
+function tableOf(m,p){return m.t==="imc"?T.imc.map(([x,y])=>[x+imcShift(p),y]):T[m.t]}
+function check(m,raw){
+  const v=parseVal(m,raw);
+  if(v==null)return"Entre une valeur valide.";
+  if(m.lim&&(v<m.lim[0]||v>m.lim[1]))return`Valeur improbable pour « ${m.label} ». Vérifie ta saisie.`;
+  return"";
+}
+function jump(m,raw,id){
+  if(!current)return false;
+  const l=lastOf(hist(current,id));if(!l)return false;
+  const a=parseVal(m,l.v),b=parseVal(m,raw);
+  return a>0&&b>0&&(b/a>2||b/a<.5);
+}
 function need(m,tgt,cur,p){
   const tb=tableOf(m,p).slice().sort((a,b)=>a[0]-b[0]),xs=[];
   for(let i=0;i<tb.length-1;i++){const[a,sa]=tb[i],[b,sb]=tb[i+1];
@@ -380,6 +434,13 @@ $("form").addEventListener("submit",e=>{
   const fd=new FormData(e.target),g=k=>fd.get(k);
   if(!g("prenom").trim()||!g("naissance")||!g("sexe")||!+g("taille")||!+g("poids")){
     alert("Renseigne le prénom, la date de naissance, le sexe, la taille et le poids.");return;}
+  const tl=+g("taille"),ps=+g("poids"),ag=ageOf({naissance:g("naissance")});
+  if(tl<100||tl>230||ps<30||ps>250||ag<10||ag>100){alert("Vérifie ta taille (100 à 230 cm), ton poids (30 à 250 kg) et ta date de naissance.");return}
+  for(const gr in GROUPS)for(const st of GROUPS[gr].stats)for(const m of st.m){
+    if(m.test||m.auto)continue;const v=g(m.id).trim();if(v==="")continue;
+    const err=check(m,v);if(err){alert(err);return}
+    if(jump(m,v,m.id)&&!confirm(`« ${m.label} » est très différent de ta dernière mesure. Tu confirmes ?`))return;
+  }
   const p=current||{data:{}};
   Object.assign(p,{prenom:g("prenom").trim(),naissance:g("naissance"),sexe:g("sexe"),taille:+g("taille"),poids:+g("poids")});
   for(const gr in GROUPS)for(const st of GROUPS[gr].stats)for(const m of st.m){
@@ -400,6 +461,8 @@ function segs(s0,s,col){
 function render(p){
   current=p;const r=compute(p),sc=r.total??0,i=formIdx(sc),f=FORMS[i],nx=FORMS[i+1];
   $("home").style.setProperty("--fc",f.c);
+  if(p.form==null){p.form=i;save()}
+  else if(p.form!==i){const o=p.form;p.form=i;save();if(i>o)setTimeout(()=>playTransform(o,i),200)}
   $("name").textContent=p.prenom;
   const age=Math.floor((Date.now()-new Date(p.naissance))/31557600000);
   $("meta").textContent=`GUERRIER · ${age} ANS · ${p.taille} CM · ${p.poids} KG`;
@@ -419,11 +482,33 @@ function openAvatar(){
   const keep=$("sheet").scrollTop;
   $("sheet").innerHTML=`<h2>Ton avatar</h2><div style="display:flex;justify-content:center;margin:10px 0 4px"><div class="zav2" style="width:120px;height:120px;border-color:#8b919c">${avatar(FORMS[0],116,c)}</div></div>
   <p class="hint" style="text-align:center">Tu modifies ta forme de base. Les transformations gardent leurs propres cheveux et leurs propres yeux.</p>`
-  +ch(STYLES,"style","Coiffure")+sw(HC,"hair","Cheveux et sourcils")+sw(SK,"skin","Peau")+sw(EC,"eyes","Yeux")+ch(OUTFITS,"outfit","Tenue")
+  +ch(STYLES,"style","Coiffure")+ch(BEARDS,"beard","Barbe et moustache")+sw(HC,"hair","Cheveux, sourcils et barbe")+sw(SK,"skin","Peau")+sw(EC,"eyes","Yeux")+ch(OUTFITS,"outfit","Tenue")
   +`<button class="btn2 close" id="closeSheet">Terminé</button>`;
   $("sheetBg").classList.add("on");$("sheet").scrollTop=keep;
   $("closeSheet").onclick=closeSheet;
   document.querySelectorAll("#sheet [data-k]").forEach(b=>b.onclick=()=>{current.avatar={...c,[b.dataset.k]:b.dataset.v};save();render(current);openAvatar()});
+}
+function powerSeries(p){
+  const ds=[...new Set(Object.values(p.data).flat().map(e=>e.d))].sort();
+  return ds.map(d=>{const q={...p,data:{}};for(const id in p.data)q.data[id]=p.data[id].filter(e=>e.d<=d);return{d,s:compute(q).total}}).filter(x=>x.s!=null);
+}
+function powerChart(){
+  const sr=powerSeries(current);
+  if(sr.length<2)return`<p class="hint" style="color:#9fe8bf;margin:10px 0 2px">Ajoute des mesures à des dates différentes pour voir ta courbe.</p>`;
+  const W=330,H=160,L=48,R=14,Tp=18,B=24,vs=sr.map(x=>x.s),n1=sr.length-1;
+  let lo=Math.max(0,Math.floor((Math.min(...vs)-5)/10)*10),hi=Math.min(100,Math.ceil((Math.max(...vs)+5)/10)*10);
+  if(hi-lo<20){hi=Math.min(100,lo+20);lo=hi-20}
+  const t0=new Date(sr[0].d).getTime(),t1=new Date(sr[n1].d).getTime();
+  const X=(q,i)=>L+(W-L-R)*(t1===t0?i/n1:(new Date(q.d).getTime()-t0)/(t1-t0));
+  const Y=v=>Tp+(H-Tp-B)*(1-(v-lo)/(hi-lo)),f=v=>v.toFixed(1);
+  let o=[lo,(lo+hi)/2,hi].map(v=>`<line x1="${L}" x2="${W-R}" y1="${f(Y(v))}" y2="${f(Y(v))}" stroke="#5dff9d33"/><text x="${L-6}" y="${f(Y(v)+4)}" text-anchor="end" font-size="11" fill="#9fe8bf">${pw(v)}</text>`).join("");
+  const pts=sr.map((q,i)=>[X(q,i),Y(q.s)]);
+  o+=`<polygon points="${pts.map(p=>p.map(f).join(",")).join(" ")} ${f(pts[n1][0])},${f(Y(lo))} ${f(pts[0][0])},${f(Y(lo))}" fill="#5dff9d1f"/>`;
+  o+=`<polyline points="${pts.map(p=>p.map(f).join(",")).join(" ")}" fill="none" stroke="#5dff9d" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" style="filter:drop-shadow(0 0 5px #5dff9d)"/>`;
+  pts.forEach((p,i)=>{o+=`<circle cx="${f(p[0])}" cy="${f(p[1])}" r="4" fill="#5dff9d"/>`;
+    if(sr.length<=6||i===n1)o+=`<text x="${f(p[0])}" y="${f(p[1]-9)}" text-anchor="${i===n1?"end":"middle"}" font-size="11" fill="#f2efe9">${pw(sr[i].s)}</text>`});
+  o+=`<text x="${L}" y="${H-6}" font-size="11" fill="#9fe8bf">${fmtD(sr[0].d)}</text><text x="${W-R}" y="${H-6}" text-anchor="end" font-size="11" fill="#9fe8bf">${fmtD(sr[n1].d)}</text>`;
+  return`<svg viewBox="0 0 ${W} ${H}" width="100%" style="margin-top:6px" role="img" aria-label="Évolution de la puissance">${o}</svg>`;
 }
 function renderRadar(){
   const st=compute(current).physique.stats,n=st.length,cx=180,cy=158,R=84,L=98;
@@ -439,6 +524,18 @@ function renderRadar(){
     o+=`<text x="${f(x)}" y="${f(ny)}" text-anchor="${a}" font-size="13" letter-spacing="1.5" fill="#9fe8bf">${s.st.label.toUpperCase()}</text><text x="${f(x)}" y="${f(vy)}" text-anchor="${a}" font-size="23" font-weight="700" fill="#5dff9d">${pw(s.score)}</text>`});
   $("rchart").innerHTML=`<svg viewBox="0 0 360 300" width="100%" role="img" aria-label="Graphique des statistiques">${o}</svg>`;
   $("rpw").textContent=pw(compute(current).total??0);
+  $("pcurve").innerHTML=powerChart();
+}
+function playTransform(o,n){
+  const F0=FORMS[o],F1=FORMS[n],ov=$("ov"),still=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  ov.setAttribute("role","dialog");ov.setAttribute("aria-label","Transformation");
+  ov.innerHTML=`<div class="tf" style="--tc:${F1.c}"><div class="tfbg"></div><div class="tfflash"></div>
+  <div class="tfstage"><div class="tfrays"></div><div class="tfring a"></div><div class="tfring b"></div><div class="tfav" id="tfav">${avatar(still?F1:F0,194,current.avatar)}</div></div>
+  <div class="tft1">TRANSFORMATION</div><div class="tfname">${F1.n.toUpperCase()}</div><div class="tfpw">${pw(compute(current).total??0)}</div></div>
+  <button class="go tfok" id="tfok">Continuer</button>`;
+  ov.classList.add("on");
+  if(!still)setTimeout(()=>{const e=$("tfav");if(e)e.innerHTML=avatar(F1,194,current.avatar)},1100);
+  $("tfok").onclick=()=>{ov.classList.remove("on");ov.innerHTML=""};
 }
 function renderRank(){
   const i=formIdx(compute(current).total??0);
@@ -506,7 +603,8 @@ function openMetric(g,k,id){
   $("back").onclick=()=>openStat(g,k);
   if(m.auto){}
   else $("addBtn").onclick=()=>{const v=$("nv").value.trim();
-    if(parseVal(m,v)==null){alert("Entre une valeur valide.");return}
+    const err=check(m,v);if(err){alert(err);return}
+    if(jump(m,v,id)&&!confirm("Cette valeur est très différente de ta dernière mesure. Tu confirmes ?"))return;
     addEntry(current,id,v,$("nd").value||today());save();render(current);openMetric(g,k,id)};
   document.querySelectorAll(".x").forEach(b=>b.onclick=()=>{
     if(!confirm("Supprimer cette mesure ?"))return;
